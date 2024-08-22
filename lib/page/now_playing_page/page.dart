@@ -154,7 +154,7 @@ class _NowPlayingMoreAction extends StatelessWidget {
     );
   }
 }
-
+/*
 class _DesktopLyricSwitch extends StatelessWidget {
   const _DesktopLyricSwitch({super.key});
 
@@ -192,7 +192,7 @@ class _DesktopLyricSwitch extends StatelessWidget {
       },
     );
   }
-}
+}*/
 
 class _NowPlayingVolDspSlider extends StatefulWidget {
   const _NowPlayingVolDspSlider({super.key});

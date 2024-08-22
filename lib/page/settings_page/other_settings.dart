@@ -4,10 +4,10 @@ import 'package:coriander_player/component/settings_tile.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
-import 'package:filepicker_windows/filepicker_windows.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 class DefaultLyricSourceControl extends StatefulWidget {
   const DefaultLyricSourceControl({super.key});
@@ -171,14 +171,15 @@ class _AudioLibraryEditorDialogState extends State<AudioLibraryEditorDialog> {
                 children: [
                   TextButton(
                     onPressed: () async {
-                      final dirPicker = DirectoryPicker();
-                      dirPicker.title = "选择文件夹";
+                      // final dirPicker = DirectoryPicker();
+                      // dirPicker.title = "选择文件夹";
+                      // final dir = dirPicker.getDirectory();
 
-                      final dir = dirPicker.getDirectory();
+                      final dir = await FilePicker.platform.getDirectoryPath();
                       if (dir == null) return;
 
                       setState(() {
-                        folders.add(dir.path);
+                        folders.add(dir);
                       });
                     },
                     child: const Text("添加"),

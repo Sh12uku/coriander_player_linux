@@ -8,7 +8,7 @@ import 'package:coriander_player/lyric/lyric.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
 import 'package:coriander_player/music_api/search_helper.dart';
 import 'package:coriander_player/play_service/play_service.dart';
-import 'package:desktop_lyric/message.dart';
+// import 'package:desktop_lyric/message.dart';
 import 'package:flutter/foundation.dart';
 
 /// 只通知 lyric 变更
@@ -28,7 +28,7 @@ class LyricService extends ChangeNotifier {
 
           final currLineIndex = _nextLyricLine - 1;
           _lyricLineStreamController.add(currLineIndex);
-
+          /*
           playService.desktopLyricService.canSendMessage.then((canSend) {
             if (!canSend) return;
 
@@ -49,7 +49,7 @@ class LyricService extends ChangeNotifier {
                 translation: translation,
               ));
             }
-          });
+          });*/
         }
       });
     });

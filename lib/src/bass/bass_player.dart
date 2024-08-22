@@ -32,12 +32,12 @@ enum PlayerState {
 }
 
 const BASS_PLUGINS = [
-  "BASS\\bassape.dll",
-  "BASS\\bassdsd.dll",
-  "BASS\\bassflac.dll",
-  "BASS\\bassmidi.dll",
-  "BASS\\bassopus.dll",
-  "BASS\\basswv.dll"
+  "BASS\\libbassape.so",
+  "BASS\\libbassdsd.so",
+  "BASS\\libbassflac.so",
+  "BASS\\libbassmidi.so",
+  "BASS\\libbassopus.so",
+  "BASS\\libbasswv.so"
 ];
 
 class BassPlayer {
@@ -119,7 +119,7 @@ class BassPlayer {
     final dyLibPath = path.join(
       path.dirname(Platform.resolvedExecutable),
       "BASS",
-      'bass.dll',
+      'libbass.so',
     );
     _dyLib = ffi.DynamicLibrary.open(dyLibPath);
     _bass = Bass(_dyLib);

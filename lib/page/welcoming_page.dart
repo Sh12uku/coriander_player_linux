@@ -3,12 +3,12 @@ import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/component/build_index_state_view.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/app_paths.dart' as app_paths;
-import 'package:filepicker_windows/filepicker_windows.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:file_picker/file_picker.dart';
 
 class WelcomingPage extends StatelessWidget {
   const WelcomingPage({super.key});
@@ -107,14 +107,16 @@ class _FolderSelectorViewState extends State<FolderSelectorView> {
               onPressed: () async {
                 // final path = await pickSingleFolder();
                 // if (path == null) return;
-                final dirPicker = DirectoryPicker();
-                dirPicker.title = "选择文件夹";
 
-                final dir = dirPicker.getDirectory();
+                // final dirPicker = DirectoryPicker();
+                // dirPicker.title = "选择文件夹";
+                // final dir = dirPicker.getDirectory();
+
+                final dir = await FilePicker.platform.getDirectoryPath();
                 if (dir == null) return;
 
                 setState(() {
-                  folders.add(dir.path);
+                  folders.add(dir);
                 });
               },
               child: const Text("添加文件夹"),

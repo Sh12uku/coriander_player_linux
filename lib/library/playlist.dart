@@ -10,7 +10,7 @@ List<Playlist> PLAYLISTS = [];
 
 Future<void> readPlaylists() async {
   final supportPath = (await getApplicationSupportDirectory()).path;
-  final playlistsPath = "$supportPath\\playlists.json";
+  final playlistsPath = "$supportPath/playlists.json";
 
   final playlistsStr = File(playlistsPath).readAsStringSync();
   final List playlistsJson = json.decode(playlistsStr);
@@ -22,7 +22,7 @@ Future<void> readPlaylists() async {
 
 Future<void> savePlaylists() async {
   final supportPath = (await getApplicationSupportDirectory()).path;
-  final playlistsPath = "$supportPath\\playlists.json";
+  final playlistsPath = "$supportPath/playlists.json";
 
   List<Map> playlistMaps = [];
   for (final item in PLAYLISTS) {
