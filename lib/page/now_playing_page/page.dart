@@ -11,7 +11,9 @@ import 'package:coriander_player/page/now_playing_page/component/vertical_lyric_
 import 'package:coriander_player/app_paths.dart' as app_paths;
 import 'package:coriander_player/play_service/play_service.dart';
 import 'package:coriander_player/play_service/playback_service.dart';
-import 'package:coriander_player/src/bass/bass_player.dart';
+
+// import 'package:coriander_player/src/bass/bass_player.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -19,6 +21,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'small_page.dart';
+
 part 'large_page.dart';
 
 enum NowPlayingViewMode {
@@ -48,7 +51,9 @@ class NowPlayingPage extends StatefulWidget {
 class _NowPlayingPageState extends State<NowPlayingPage> {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
 
     return Scaffold(
       appBar: const PreferredSize(
@@ -90,7 +95,9 @@ class _NowPlayingMoreAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final playbackService = context.watch<PlaybackService>();
     final nowPlaying = playbackService.nowPlaying;
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
 
     if (nowPlaying == null) {
       return IconButton(
@@ -106,25 +113,27 @@ class _NowPlayingMoreAction extends StatelessWidget {
         SubmenuButton(
           menuChildren: List.generate(
             nowPlaying.splitedArtists.length,
-            (i) => MenuItemButton(
-              onPressed: () {
-                final Artist artist = AudioLibrary
-                    .instance.artistCollection[nowPlaying.splitedArtists[i]]!;
-                context.pushReplacement(
-                  app_paths.ARTIST_DETAIL_PAGE,
-                  extra: artist,
-                );
-              },
-              leadingIcon: const Icon(Symbols.people),
-              child: Text(nowPlaying.splitedArtists[i]),
-            ),
+                (i) =>
+                MenuItemButton(
+                  onPressed: () {
+                    final Artist artist = AudioLibrary
+                        .instance.artistCollection[nowPlaying
+                        .splitedArtists[i]]!;
+                    context.pushReplacement(
+                      app_paths.ARTIST_DETAIL_PAGE,
+                      extra: artist,
+                    );
+                  },
+                  leadingIcon: const Icon(Symbols.people),
+                  child: Text(nowPlaying.splitedArtists[i]),
+                ),
           ),
           child: const Text("艺术家"),
         ),
         MenuItemButton(
           onPressed: () {
             final Album album =
-                AudioLibrary.instance.albumCollection[nowPlaying.album]!;
+            AudioLibrary.instance.albumCollection[nowPlaying.album]!;
             context.pushReplacement(app_paths.ALBUM_DETAIL_PAGE, extra: album);
           },
           leadingIcon: const Icon(Symbols.album),
@@ -139,18 +148,19 @@ class _NowPlayingMoreAction extends StatelessWidget {
           child: const Text("详细信息"),
         ),
       ],
-      builder: (context, controller, _) => IconButton(
-        tooltip: "更多",
-        onPressed: () {
-          if (controller.isOpen) {
-            controller.close();
-          } else {
-            controller.open();
-          }
-        },
-        icon: const Icon(Symbols.more_vert),
-        color: scheme.onSecondaryContainer,
-      ),
+      builder: (context, controller, _) =>
+          IconButton(
+            tooltip: "更多",
+            onPressed: () {
+              if (controller.isOpen) {
+                controller.close();
+              } else {
+                controller.open();
+              }
+            },
+            icon: const Icon(Symbols.more_vert),
+            color: scheme.onSecondaryContainer,
+          ),
     );
   }
 }
@@ -211,7 +221,9 @@ class _NowPlayingVolDspSliderState extends State<_NowPlayingVolDspSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
 
     return MenuAnchor(
       style: MenuStyle(
@@ -226,44 +238,47 @@ class _NowPlayingVolDspSliderState extends State<_NowPlayingVolDspSlider> {
           ),
           child: ValueListenableBuilder(
             valueListenable: dragVolDsp,
-            builder: (context, dragVolDspValue, _) => Slider(
-              thumbColor: scheme.primary,
-              activeColor: scheme.primary,
-              inactiveColor: scheme.outline,
-              min: 0.0,
-              max: 1.0,
-              value: isDragging ? dragVolDspValue : playbackService.volumeDsp,
-              label: "${(dragVolDspValue * 100).toInt()}",
-              onChangeStart: (value) {
-                isDragging = true;
-                dragVolDsp.value = value;
-                playbackService.setVolumeDsp(value);
-              },
-              onChanged: (value) {
-                dragVolDsp.value = value;
-                playbackService.setVolumeDsp(value);
-              },
-              onChangeEnd: (value) {
-                isDragging = false;
-                dragVolDsp.value = value;
-                playbackService.setVolumeDsp(value);
-              },
-            ),
+            builder: (context, dragVolDspValue, _) =>
+                Slider(
+                  thumbColor: scheme.primary,
+                  activeColor: scheme.primary,
+                  inactiveColor: scheme.outline,
+                  min: 0.0,
+                  max: 1.0,
+                  value: isDragging ? dragVolDspValue : playbackService
+                      .volumeDsp,
+                  label: "${(dragVolDspValue * 100).toInt()}",
+                  onChangeStart: (value) {
+                    isDragging = true;
+                    dragVolDsp.value = value;
+                    playbackService.setVolumeDsp(value);
+                  },
+                  onChanged: (value) {
+                    dragVolDsp.value = value;
+                    playbackService.setVolumeDsp(value);
+                  },
+                  onChangeEnd: (value) {
+                    isDragging = false;
+                    dragVolDsp.value = value;
+                    playbackService.setVolumeDsp(value);
+                  },
+                ),
           ),
         ),
       ],
-      builder: (context, controller, _) => IconButton(
-        tooltip: "音量",
-        onPressed: () {
-          if (controller.isOpen) {
-            controller.close();
-          } else {
-            controller.open();
-          }
-        },
-        icon: const Icon(Symbols.volume_up),
-        color: scheme.onSecondaryContainer,
-      ),
+      builder: (context, controller, _) =>
+          IconButton(
+            tooltip: "音量",
+            onPressed: () {
+              if (controller.isOpen) {
+                controller.close();
+              } else {
+                controller.open();
+              }
+            },
+            icon: const Icon(Symbols.volume_up),
+            color: scheme.onSecondaryContainer,
+          ),
     );
   }
 }
@@ -273,7 +288,9 @@ class _NowPlayingPlayModeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return ValueListenableBuilder(
@@ -316,19 +333,22 @@ class _NowPlayingShuffleSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return ValueListenableBuilder(
       valueListenable: playbackService.shuffle,
-      builder: (context, shuffle, _) => IconButton(
-        tooltip: "随机；现在：${shuffle ? "启用" : "禁用"}",
-        onPressed: () {
-          playbackService.useShuffle(!shuffle);
-        },
-        icon: Icon(shuffle ? Symbols.shuffle_on : Symbols.shuffle),
-        color: scheme.onSecondaryContainer,
-      ),
+      builder: (context, shuffle, _) =>
+          IconButton(
+            tooltip: "随机；现在：${shuffle ? "启用" : "禁用"}",
+            onPressed: () {
+              playbackService.useShuffle(!shuffle);
+            },
+            icon: Icon(shuffle ? Symbols.shuffle_on : Symbols.shuffle),
+            color: scheme.onSecondaryContainer,
+          ),
     );
   }
 }
@@ -339,7 +359,9 @@ class _NowPlayingMainControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return Row(
@@ -401,9 +423,12 @@ class _NowPlayingSlider extends StatefulWidget {
 class _NowPlayingSliderState extends State<_NowPlayingSlider> {
   final dragPosition = ValueNotifier(0.0);
   bool isDragging = false;
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
     final playbackService = context.watch<PlaybackService>();
     final nowPlayingLength = playbackService.length;
 
@@ -416,70 +441,76 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
           child: StreamBuilder(
             stream: playbackService.playerStateStream,
             initialData: playbackService.playerState,
-            builder: (context, playerStateSnapshot) => ListenableBuilder(
-              listenable: dragPosition,
-              builder: (context, _) => StreamBuilder(
-                stream: playbackService.positionStream,
-                initialData: playbackService.position,
-                builder: (context, positionSnapshot) => Slider(
-                  thumbColor: scheme.primary,
-                  activeColor: scheme.primary,
-                  inactiveColor: scheme.outline,
-                  min: 0.0,
-                  max: nowPlayingLength,
-                  value: isDragging
-                      ? dragPosition.value
-                      : positionSnapshot.data! > nowPlayingLength
-                          ? nowPlayingLength
-                          : positionSnapshot.data!,
-                  label: Duration(
-                    milliseconds: (dragPosition.value * 1000).toInt(),
-                  ).toStringHMMSS(),
-                  onChangeStart: (value) {
-                    isDragging = true;
-                    dragPosition.value = value;
-                  },
-                  onChanged: (value) {
-                    dragPosition.value = value;
-                  },
-                  onChangeEnd: (value) {
-                    isDragging = false;
-                    playbackService.seek(value);
-                  },
+            builder: (context, playerStateSnapshot) =>
+                ListenableBuilder(
+                  listenable: dragPosition,
+                  builder: (context, _) =>
+                      StreamBuilder<Duration>(
+                        stream: playbackService.positionStream,
+                        initialData: Duration(milliseconds: (playbackService.position * 1000).toInt()),
+                        builder: (context,
+                            AsyncSnapshot<Duration> positionSnapshot) {
+                          double currentValue = 0.0;
+                          if (positionSnapshot.hasData) {
+                            currentValue = positionSnapshot.data!.inSeconds.toDouble();
+                            if (currentValue > nowPlayingLength) {
+                              currentValue = nowPlayingLength;
+                            }
+                          }
+                          return Slider(
+                            thumbColor: scheme.primary,
+                            activeColor: scheme.primary,
+                            inactiveColor: scheme.outline,
+                            min: 0.0,
+                            max: nowPlayingLength,
+                            value: isDragging ? dragPosition.value : currentValue,
+                            label: Duration(seconds: (dragPosition.value).toInt()).toStringHMMSS(),
+                            onChangeStart: (value) {
+                              isDragging = true;
+                              dragPosition.value = value;
+                            },
+                            onChanged: (value) {
+                              dragPosition.value = value;
+                            },
+                            onChangeEnd: (value) {
+                              isDragging = false;
+                              playbackService.seek(value);
+                            },
+                          );
+                        },
+                        // builder: (context, positionSnapshot) => SquigglySlider(
+                        //   thumbColor: scheme.primary,
+                        //   activeColor: scheme.primary,
+                        //   inactiveColor: scheme.outline,
+                        //   useLineThumb: true,
+                        //   squiggleAmplitude:
+                        //       playerStateSnapshot.data == PlayerState.playing ? 6.0 : 0,
+                        //   squiggleWavelength: 10.0,
+                        //   squiggleSpeed: 0.08,
+                        //   min: 0.0,
+                        //   max: nowPlayingLength,
+                        //   value: isDragging
+                        //       ? dragPosition.value
+                        //       : positionSnapshot.data! > nowPlayingLength
+                        //           ? nowPlayingLength
+                        //           : positionSnapshot.data!,
+                        //   label: Duration(
+                        //     milliseconds: (dragPosition.value * 1000).toInt(),
+                        //   ).toStringHMMSS(),
+                        //   onChangeStart: (value) {
+                        //     isDragging = true;
+                        //     dragPosition.value = value;
+                        //   },
+                        //   onChanged: (value) {
+                        //     dragPosition.value = value;
+                        //   },
+                        //   onChangeEnd: (value) {
+                        //     isDragging = false;
+                        //     playbackService.seek(value);
+                        //   },
+                        // ),
+                      ),
                 ),
-                // builder: (context, positionSnapshot) => SquigglySlider(
-                //   thumbColor: scheme.primary,
-                //   activeColor: scheme.primary,
-                //   inactiveColor: scheme.outline,
-                //   useLineThumb: true,
-                //   squiggleAmplitude:
-                //       playerStateSnapshot.data == PlayerState.playing ? 6.0 : 0,
-                //   squiggleWavelength: 10.0,
-                //   squiggleSpeed: 0.08,
-                //   min: 0.0,
-                //   max: nowPlayingLength,
-                //   value: isDragging
-                //       ? dragPosition.value
-                //       : positionSnapshot.data! > nowPlayingLength
-                //           ? nowPlayingLength
-                //           : positionSnapshot.data!,
-                //   label: Duration(
-                //     milliseconds: (dragPosition.value * 1000).toInt(),
-                //   ).toStringHMMSS(),
-                //   onChangeStart: (value) {
-                //     isDragging = true;
-                //     dragPosition.value = value;
-                //   },
-                //   onChanged: (value) {
-                //     dragPosition.value = value;
-                //   },
-                //   onChangeEnd: (value) {
-                //     isDragging = false;
-                //     playbackService.seek(value);
-                //   },
-                // ),
-              ),
-            ),
           ),
         ),
         Padding(
@@ -487,23 +518,20 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              StreamBuilder(
+              StreamBuilder<Duration>(
                 stream: playbackService.positionStream,
-                initialData: playbackService.position,
-                builder: (context, snapshot) {
+                initialData: Duration(milliseconds: (playbackService.position * 1000).toInt()),
+                builder: (context,AsyncSnapshot<Duration> snapshot) {
                   final pos = snapshot.data!;
                   return Text(
-                    Duration(
-                      milliseconds: (pos * 1000).toInt(),
-                    ).toStringHMMSS(),
+                    pos.toStringHMMSS(),
                     style: TextStyle(color: scheme.onSecondaryContainer),
                   );
                 },
               ),
               Text(
-                Duration(
-                  milliseconds: (nowPlayingLength * 1000).toInt(),
-                ).toStringHMMSS(),
+                Duration(milliseconds: (nowPlayingLength * 1000).toInt())
+                    .toStringHMMSS(),
                 style: TextStyle(color: scheme.onSecondaryContainer),
               ),
             ],
@@ -541,7 +569,9 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme
+        .of(context)
+        .colorScheme;
     final nowPlaying = playbackService.nowPlaying;
 
     final placeholder = FittedBox(
@@ -580,22 +610,22 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
               child: nowPlayingCover == null
                   ? placeholder
                   : FutureBuilder(
-                      future: nowPlayingCover,
-                      builder: (context, snapshot) {
-                        if (snapshot.data == null) {
-                          return placeholder;
-                        }
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image(
-                            image: snapshot.data!,
-                            width: 400.0,
-                            height: 400.0,
-                            errorBuilder: (_, __, ___) => placeholder,
-                          ),
-                        );
-                      },
+                future: nowPlayingCover,
+                builder: (context, snapshot) {
+                  if (snapshot.data == null) {
+                    return placeholder;
+                  }
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image(
+                      image: snapshot.data!,
+                      width: 400.0,
+                      height: 400.0,
+                      errorBuilder: (_, __, ___) => placeholder,
                     ),
+                  );
+                },
+              ),
             )
           ],
         ),

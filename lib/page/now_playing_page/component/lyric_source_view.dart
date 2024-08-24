@@ -272,8 +272,7 @@ class _LyricSourceTileState extends State<_LyricSourceTile> {
         builder: (context, positionSnapshot) {
           final currLineIndex = max(lyric.lines.lastIndexWhere(
             (element) {
-              return element.start.inMilliseconds <
-                  (positionSnapshot.data ?? 0) * 1000;
+              return element.start < (positionSnapshot.data ?? Duration.zero);
             },
           ), 0);
 
