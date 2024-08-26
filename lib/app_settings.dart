@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:coriander_player/src/rust/api/system_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,10 +10,13 @@ class AppSettings {
   static const String version = "1.1.0";
 
   /// 主题模式：亮 / 暗
-  ThemeMode themeMode = getWindowsThemeMode();
+  /// 默认跟随系统
+  ThemeMode themeMode = ThemeMode.system;
 
   /// 启动时 / 封面主题色不适合当主题时的主题
-  int defaultTheme = getWindowsTheme();
+  /// 暂时调整为固定值
+  // int defaultTheme = getWindowsTheme();
+  int defaultTheme = const Color.fromARGB(0, 0, 0, 0).value;
 
   /// 跟随歌曲封面的动态主题
   bool dynamicTheme = true;
@@ -40,17 +42,19 @@ class AppSettings {
 
   static AppSettings get instance => _instance;
 
-  static ThemeMode getWindowsThemeMode() {
+  /// 获取系统主题模式
+  /*static ThemeMode getWindowsThemeMode() {
     final systemTheme = SystemTheme.getSystemTheme();
 
     final isDarkMode = (((5 * systemTheme.fore.$3) +
-            (2 * systemTheme.fore.$2) +
-            systemTheme.fore.$4) >
+        (2 * systemTheme.fore.$2) +
+        systemTheme.fore.$4) >
         (8 * 128));
     return isDarkMode ? ThemeMode.dark : ThemeMode.light;
-  }
+  }*/
 
-  static int getWindowsTheme() {
+  /// 获取Windows主题色
+  /*static int getWindowsTheme() {
     final systemTheme = SystemTheme.getSystemTheme();
     return Color.fromARGB(
       systemTheme.accent.$1,
@@ -58,7 +62,7 @@ class AppSettings {
       systemTheme.accent.$3,
       systemTheme.accent.$4,
     ).value;
-  }
+  }*/
 
   AppSettings._();
 
@@ -78,7 +82,7 @@ class AppSettings {
     }
     if (!_instance.useSystemThemeMode) {
       _instance.themeMode =
-          settingsMap["ThemeMode"] == 0 ? ThemeMode.light : ThemeMode.dark;
+      settingsMap["ThemeMode"] == 0 ? ThemeMode.light : ThemeMode.dark;
     }
 
     _instance.dynamicTheme = settingsMap["DynamicTheme"] == 1 ? true : false;
@@ -100,7 +104,7 @@ class AppSettings {
 
   static Future<void> readFromJson() async {
     final supportPath = (await getApplicationSupportDirectory()).path;
-    final settingsPath = "$supportPath\\settings.json";
+    final settingsPath = "$supportPath/settings.json";
 
     final settingsStr = File(settingsPath).readAsStringSync();
     Map settingsMap = json.decode(settingsStr);
@@ -138,7 +142,7 @@ class AppSettings {
       _instance.artistSeparator = _as;
       _instance.artistSplitPattern = _instance.artistSeparator.join("|");
     }
-    
+
 
     final llf = settingsMap["LocalLyricFirst"];
     if (llf != null) {
@@ -172,14 +176,14 @@ class AppSettings {
       "ArtistSeparator": artistSeparator,
       "LocalLyricFirst": localLyricFirst,
       "WindowSize":
-          "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
+      "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
       "FontFamily": fontFamily,
       "FontPath": fontPath,
     };
 
     final settingsStr = json.encode(settingsMap);
     final supportPath = (await getApplicationSupportDirectory()).path;
-    final settingsPath = "$supportPath\\settings.json";
+    final settingsPath = "$supportPath/settings.json";
     File(settingsPath).writeAsStringSync(settingsStr);
   }
 }

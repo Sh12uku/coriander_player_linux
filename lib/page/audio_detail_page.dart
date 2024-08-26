@@ -2,9 +2,10 @@ import 'package:coriander_player/extensions.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/component/album_tile.dart';
 import 'package:coriander_player/component/artist_tile.dart';
-import 'package:coriander_player/src/rust/api/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class AudioDetailPage extends StatelessWidget {
   const AudioDetailPage({super.key, required this.audio});
@@ -118,9 +119,9 @@ class AudioDetailPage extends StatelessWidget {
                 Text("路径", style: styleTitle),
                 TextButton(
                   onPressed: () async {
-                    final result = await showInExplorer(path: audio.path);
-
-                    if (!result && context.mounted) {
+                    // final result = await showInExplorer(path: audio.path);
+                    final Uri path = Uri.parse(audio.path);
+                    if(!await launchUrl(path) && context.mounted){
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("打开失败")),
                       );
@@ -145,14 +146,14 @@ class AudioDetailPage extends StatelessWidget {
             ),
 
             /// created
-            _AudioDetailTile(
+            /*_AudioDetailTile(
               title: "创建时间",
               detail: Text(
                 DateTime.fromMillisecondsSinceEpoch(
                   audio.created * 1000,
                 ).toString(),
               ),
-            ),
+            ),*/
           ],
         ),
       ),

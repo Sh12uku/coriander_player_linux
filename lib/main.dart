@@ -30,7 +30,7 @@ Future<void> initWindow() async {
 Future<void> main() async {
   await RustLib.init();
   final supportPath = (await getApplicationSupportDirectory()).path;
-  if (File("$supportPath\\settings.json").existsSync()) {
+  if (File("$supportPath/settings.json").existsSync()) {
     await AppSettings.readFromJson();
     final settings = AppSettings.instance;
     if (settings.fontFamily != null) {
@@ -48,10 +48,10 @@ Future<void> main() async {
       } catch (_) {}
     }
   }
-  if (File("$supportPath\\app_preference.json").existsSync()) {
+  if (File("$supportPath/app_preference.json").existsSync()) {
     await AppPreference.read();
   }
-  final welcome = !File("$supportPath\\index.json").existsSync();
+  final welcome = !File("$supportPath/index.json").existsSync();
   await initWindow();
 
   runApp(Entry(welcome: welcome));

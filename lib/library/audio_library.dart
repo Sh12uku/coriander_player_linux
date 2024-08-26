@@ -40,7 +40,7 @@ class AudioLibrary {
   /// ```
   static Future<void> initFromIndex() async {
     final supportPath = (await getApplicationSupportDirectory()).path;
-    final indexPath = "$supportPath\\index.json";
+    final indexPath = "$supportPath/index.json";
 
     final indexStr = File(indexPath).readAsStringSync();
     final Map indexJson = json.decode(indexStr);

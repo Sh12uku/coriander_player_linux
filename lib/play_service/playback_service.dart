@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/play_service/play_service.dart';
-import 'package:coriander_player/src/bass/bass_player.dart';
-import 'package:coriander_player/src/rust/api/smtc_flutter.dart';
+// import 'package:coriander_player/src/bass/bass_player.dart';
+import 'package:audioplayers/audioplayers.dart';
+// import 'package:coriander_player/src/rust/api/smtc_flutter.dart';
 import 'package:coriander_player/theme_provider.dart';
-import 'package:desktop_lyric/message.dart';
+// import 'package:desktop_lyric/message.dart';
 import 'package:flutter/foundation.dart';
 
 enum PlayMode {
@@ -32,7 +33,13 @@ class PlaybackService extends ChangeNotifier {
   final PlayService playService;
 
   late StreamSubscription _playerStateStreamSub;
-  late StreamSubscription _smtcEventStreamSub;
+  late StreamSubscription<Duration> _durationStreamSub;
+  late StreamSubscription<Duration> _positionStreamSub;
+
+  late Duration _duration;
+  late Duration _position;
+
+  // late StreamSubscription _smtcEventStreamSub;
 
   PlaybackService(this.playService) {
     _playerStateStreamSub = playerStateStream.listen((event) {
@@ -40,7 +47,13 @@ class PlaybackService extends ChangeNotifier {
         _autoNextAudio();
       }
     });
-
+    _durationStreamSub = durationStream.listen((event) {
+      _duration = event;
+    });
+    _positionStreamSub = positionStream.listen((event) {
+      _position = event;
+    });
+    /*
     _smtcEventStreamSub = _smtc.subscribeToControlEvents().listen((event) {
       switch (event) {
         case SMTCControlEvent.play:
@@ -57,11 +70,12 @@ class PlaybackService extends ChangeNotifier {
           break;
         case SMTCControlEvent.unknown:
       }
-    });
+    });*/
   }
 
-  final _player = BassPlayer();
-  final _smtc = SmtcFlutter();
+  // final _player = BassPlayer();
+  final _player = AudioPlayer();
+  // final _smtc = SmtcFlutter();
   final _pref = AppPreference.instance.playbackPref;
 
   Audio? nowPlaying;
@@ -83,23 +97,26 @@ class PlaybackService extends ChangeNotifier {
   late final _shuffle = ValueNotifier(false);
   ValueNotifier<bool> get shuffle => _shuffle;
 
-  double get length => _player.length;
+  double get length => _duration.inMilliseconds / 1000;
 
-  double get position => _player.position;
+  double get position => _position.inMilliseconds / 1000;
 
-  PlayerState get playerState => _player.playerState;
+  PlayerState get playerState => _player.state;
 
-  double get volumeDsp => _player.volumeDsp;
+  double get volumeDsp => 1.0;
 
   /// 修改解码时的音量（不影响 Windows 系统音量）
   void setVolumeDsp(double volume) {
-    _player.setVolumeDsp(volume);
-    _pref.volumeDsp = volume;
+    // _player.setVolumeDsp(volume);
+    // _pref.volumeDsp = volume;
+    _pref.volumeDsp = 1.0;
   }
 
-  Stream<double> get positionStream => _player.positionStream;
+  Stream<Duration> get positionStream => _player.onPositionChanged.asBroadcastStream();
 
-  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
+  Stream<Duration> get durationStream => _player.onDurationChanged;
+
+  Stream<PlayerState> get playerStateStream => _player.onPlayerStateChanged;
 
   /// 1. 更新 [_playlistIndex] 为 [audioIndex]
   /// 2. 更新 [nowPlaying] 为 playlist[_nowPlayingIndex]
@@ -111,15 +128,15 @@ class PlaybackService extends ChangeNotifier {
   void _loadAndPlay(int audioIndex, List<Audio> playlist) {
     _playlistIndex = audioIndex;
     nowPlaying = playlist[audioIndex];
-    _player.setSource(nowPlaying!.path);
+    _player.setSource(DeviceFileSource(nowPlaying!.path));
     setVolumeDsp(AppPreference.instance.playbackPref.volumeDsp);
 
     playService.lyricService.updateLyric();
 
-    _player.start();
+    _player.resume();
     notifyListeners();
     ThemeProvider.instance.applyThemeFromAudio(nowPlaying!);
-
+    /*
     _smtc.updateState(state: SMTCState.playing);
     _smtc.updateDisplay(
       title: nowPlaying!.title,
@@ -141,7 +158,7 @@ class PlaybackService extends ChangeNotifier {
           album: nowPlaying!.album,
         ),
       );
-    });
+    });*/
   }
 
   /// 播放当前播放列表的第几项，只能用在播放列表界面
@@ -257,6 +274,7 @@ class PlaybackService extends ChangeNotifier {
   /// 暂停
   void pause() {
     _player.pause();
+    /*
     _smtc.updateState(state: SMTCState.paused);
     playService.desktopLyricService.canSendMessage.then((canSend) {
       if (!canSend) return;
@@ -264,12 +282,13 @@ class PlaybackService extends ChangeNotifier {
       playService.desktopLyricService.sendMessage(
         PlayerActionMessage(action: PlayerAction.PAUSE),
       );
-    });
+    });*/
   }
 
   /// 恢复播放
   void start() {
-    _player.start();
+    _player.resume();
+    /*
     _smtc.updateState(state: SMTCState.playing);
     playService.desktopLyricService.canSendMessage.then((canSend) {
       if (!canSend) return;
@@ -277,7 +296,7 @@ class PlaybackService extends ChangeNotifier {
       playService.desktopLyricService.sendMessage(
         PlayerActionMessage(action: PlayerAction.START),
       );
-    });
+    });*/
   }
 
   /// 再次播放。在顺序播放完最后一曲时再次按播放时使用。
@@ -285,17 +304,18 @@ class PlaybackService extends ChangeNotifier {
   void playAgain() => _nextAudio_singleLoop();
 
   void seek(double position) {
-    _player.seek(position);
+    _player.seek(Duration(milliseconds: (position * 1000).toInt()));
     playService.lyricService.findCurrLyricLine();
   }
 
-  Future<void> closeSmtc() => _smtc.close();
+  // Future<void> closeSmtc() => _smtc.close();
 
   @override
   void dispose() {
     _playerStateStreamSub.cancel();
-    _smtcEventStreamSub.cancel();
-    _player.free();
+    // _smtcEventStreamSub.cancel();
+    // _player.free();
+    _player.dispose();
     super.dispose();
   }
 }

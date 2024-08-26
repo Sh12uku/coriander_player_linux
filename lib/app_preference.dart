@@ -15,16 +15,16 @@ class PagePreference {
   PagePreference(this.sortMethod, this.sortOrder, this.contentView);
 
   Map toMap() => {
-        "sortMethod": sortMethod,
-        "sortOrder": sortOrder.name,
-        "contentView": contentView.name,
-      };
+    "sortMethod": sortMethod,
+    "sortOrder": sortOrder.name,
+    "contentView": contentView.name,
+  };
 
   factory PagePreference.fromMap(Map map) => PagePreference(
-        map["sortMethod"] ?? 0,
-        SortOrder.fromString(map["sortOrder"]) ?? SortOrder.ascending,
-        ContentView.fromString(map["contentView"]) ?? ContentView.list,
-      );
+    map["sortMethod"] ?? 0,
+    SortOrder.fromString(map["sortOrder"]) ?? SortOrder.ascending,
+    ContentView.fromString(map["contentView"]) ?? ContentView.list,
+  );
 }
 
 class NowPlayingPagePreference {
@@ -34,18 +34,18 @@ class NowPlayingPagePreference {
   double translationFontSize;
 
   NowPlayingPagePreference(
-    this.nowPlayingViewMode,
-    this.lyricTextAlign,
-    this.lyricFontSize,
-    this.translationFontSize,
-  );
+      this.nowPlayingViewMode,
+      this.lyricTextAlign,
+      this.lyricFontSize,
+      this.translationFontSize,
+      );
 
   Map toMap() => {
-        "nowPlayingViewMode": nowPlayingViewMode.name,
-        "lyricTextAlign": lyricTextAlign.name,
-        "lyricFontSize": lyricFontSize,
-        "translationFontSize": translationFontSize,
-      };
+    "nowPlayingViewMode": nowPlayingViewMode.name,
+    "lyricTextAlign": lyricTextAlign.name,
+    "lyricFontSize": lyricFontSize,
+    "translationFontSize": translationFontSize,
+  };
 
   factory NowPlayingPagePreference.fromMap(Map map) {
     return NowPlayingPagePreference(
@@ -65,42 +65,42 @@ class PlaybackPreference {
   PlaybackPreference(this.playMode, this.volumeDsp);
 
   Map toMap() => {
-        "playMode": playMode.name,
-        "volumeDsp": volumeDsp,
-      };
+    "playMode": playMode.name,
+    "volumeDsp": volumeDsp,
+  };
 
   factory PlaybackPreference.fromMap(Map map) => PlaybackPreference(
-        PlayMode.fromString(map["playMode"]) ?? PlayMode.forward,
-        map["volumeDsp"] ?? 1.0,
-      );
+    PlayMode.fromString(map["playMode"]) ?? PlayMode.forward,
+    map["volumeDsp"] ?? 1.0,
+  );
 }
 
 class AppPreference {
   var audiosPagePref = PagePreference(0, SortOrder.ascending, ContentView.list);
 
   var artistsPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.table);
+  PagePreference(0, SortOrder.ascending, ContentView.table);
 
   var artistDetailPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.list);
+  PagePreference(0, SortOrder.ascending, ContentView.list);
 
   var albumsPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.table);
+  PagePreference(0, SortOrder.ascending, ContentView.table);
 
   var albumDetailPagePref =
-      PagePreference(2, SortOrder.ascending, ContentView.list);
+  PagePreference(2, SortOrder.ascending, ContentView.list);
 
   var foldersPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.list);
+  PagePreference(0, SortOrder.ascending, ContentView.list);
 
   var folderDetailPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.list);
+  PagePreference(0, SortOrder.ascending, ContentView.list);
 
   var playlistsPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.list);
+  PagePreference(0, SortOrder.ascending, ContentView.list);
 
   var playlistDetailPagePref =
-      PagePreference(0, SortOrder.ascending, ContentView.list);
+  PagePreference(0, SortOrder.ascending, ContentView.list);
 
   int startPage = 0;
 
@@ -111,7 +111,7 @@ class AppPreference {
 
   Future<void> save() async {
     final supportPath = (await getApplicationSupportDirectory()).path;
-    final appPreferencePath = "$supportPath\\app_preference.json";
+    final appPreferencePath = "$supportPath/app_preference.json";
 
     Map prefMap = {
       "audiosPagePref": audiosPagePref.toMap(),
@@ -135,7 +135,7 @@ class AppPreference {
 
   static Future<void> read() async {
     final supportPath = (await getApplicationSupportDirectory()).path;
-    final appPreferencePath = "$supportPath\\app_preference.json";
+    final appPreferencePath = "$supportPath/app_preference.json";
 
     final prefJson = await File(appPreferencePath).readAsString();
     final Map prefMap = json.decode(prefJson);

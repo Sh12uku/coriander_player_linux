@@ -3,7 +3,10 @@
 
 ## [更多软件截图在下面（点我滚动到下面）](#软件截图)
 
-**该播放器拥有桌面歌词组件。这个桌面歌词组件也可以给别的音乐播放器使用。请见 [desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git)**
+正在学习开发Flutter应用，不保证所有bug都能修复（逃
+
+~~该播放器拥有桌面歌词组件。这个桌面歌词组件也可以给别的音乐播放器使用。请见 [desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git)~~
+Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 ## 安装
 1. 下载 [Release](https://github.com/Ferry-200/coriander_player/releases/latest) 里文件安装
@@ -26,6 +29,8 @@
 - opus
 - dsf, dff
 - ape
+
+*由于兼容性问题更换 bass lib 为 Flutter库 audioplayers, 支持格式见[audio types](https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/media-types.html?gi-language=c#table-of-audio-types)*
 
 ## 支持下列音乐格式的内嵌歌词
 - aac
@@ -53,9 +58,9 @@
 
 ## 编译
 1. 开发 flutter 需要的环境
-2. 需要编译 Coriander Player（本仓库） 软件本体和 desktop_lyric。[desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git) 也是 Flutter 应用，直接编译即可
-3. 要把得到的 desktop_lyric 产物放在软件目录的 `desktop_lyric/` 目录下
-4. 编译后要把 BASS 库的 64 位的 `bass.dll`, `bassape.dll`, `bassdsd.dll`, `bassflac.dll`, `bassmidi.dll`, `bassopus.dll`, `basswv.dll` 放在软件目录的 `BASS` 文件夹下
+2. 需要编译 Coriander Player（本仓库） 软件本体~~和 desktop_lyric。[desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git) 也是 Flutter 应用~~，直接编译即可
+~~3. 要把得到的 desktop_lyric 产物放在软件目录的 `desktop_lyric/` 目录下~~
+~~4. 编译后要把 BASS 库的 64 位的 `bass.dll`, `bassape.dll`, `bassdsd.dll`, `bassflac.dll`, `bassmidi.dll`, `bassopus.dll`, `basswv.dll` 放在软件目录的 `BASS` 文件夹下~~
 
 ## 歌词特性解释
 1. lrc歌词的间奏识别   
@@ -78,6 +83,7 @@
    第一行的开始时间是 5905ms，持续 5466ms；第二行则是 23037ms和 5254ms。可见 5905 + 5466 = 11371，与 23037相差超过 5000ms，所以这两行时间可以插入表示间奏的空白行
 
 ## 感谢
+- [源项目](https://github.com/Ferry-200/coriander_player)：实现应用全部功能
 - [music_api](https://github.com/yhsj0919/music_api.git)：实现歌曲的匹配和歌词的获取
 - [Lofty](https://crates.io/crates/lofty)：歌曲标签获取
 - [BASS](https://www.un4seen.com/bass.html)：播放乐曲

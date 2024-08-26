@@ -33,17 +33,17 @@ class SlideTransitionPage<T> extends CustomTransitionPage<T> {
     super.restorationId,
     super.key,
   }) : super(
-          transitionsBuilder: _transitionsBuilder,
-          transitionDuration: const Duration(milliseconds: 150),
-          reverseTransitionDuration: const Duration(milliseconds: 150),
-        );
+    transitionsBuilder: _transitionsBuilder,
+    transitionDuration: const Duration(milliseconds: 150),
+    reverseTransitionDuration: const Duration(milliseconds: 150),
+  );
 
   static Widget _transitionsBuilder(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      Widget child,
+      ) {
     final tween = Tween(
       begin: const Offset(0, 0.10),
       end: const Offset(0, 0),
@@ -117,7 +117,7 @@ class Entry extends StatelessWidget {
 
   late final GoRouter config = GoRouter(
     initialLocation:
-        welcome ? app_paths.WELCOMING_PAGE : app_paths.UPDATING_DIALOG,
+    welcome ? app_paths.WELCOMING_PAGE : app_paths.UPDATING_DIALOG,
     routes: [
       ShellRoute(
         builder: (context, state, page) => AppShell(page: page),

@@ -8,7 +8,7 @@ import 'package:coriander_player/lyric/lyric.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
 import 'package:coriander_player/search_helper.dart';
 import 'package:coriander_player/play_service/play_service.dart';
-import 'package:desktop_lyric/message.dart';
+// import 'package:desktop_lyric/message.dart';
 import 'package:flutter/foundation.dart';
 
 /// 只通知 lyric 变更
@@ -23,12 +23,12 @@ class LyricService extends ChangeNotifier {
         if (value == null) return;
         if (_nextLyricLine >= value.lines.length) return;
 
-        if ((pos * 1000) > value.lines[_nextLyricLine].start.inMilliseconds) {
+        if (pos.inMilliseconds > value.lines[_nextLyricLine].start.inMilliseconds) {
           _nextLyricLine += 1;
 
           final currLineIndex = _nextLyricLine - 1;
           _lyricLineStreamController.add(currLineIndex);
-
+          /*
           playService.desktopLyricService.canSendMessage.then((canSend) {
             if (!canSend) return;
 
@@ -49,7 +49,7 @@ class LyricService extends ChangeNotifier {
                 translation: translation,
               ));
             }
-          });
+          });*/
         }
       });
     });
@@ -75,11 +75,11 @@ class LyricService extends ChangeNotifier {
     currLyricFuture.then((value) {
       if (value == null) return;
 
-      final next = value.lines.indexWhere(
-        (element) =>
-            element.start.inMilliseconds / 1000 >
-            playService.playbackService.position,
-      );
+      final next = value.lines.indexWhere((element) {
+        var position = playService.playbackService.position;
+        return element.start.inMilliseconds / 1000 > position;
+      });
+
       _nextLyricLine = next == -1 ? value.lines.length : next;
       _lyricLineStreamController.add(max(_nextLyricLine - 1, 0));
     });

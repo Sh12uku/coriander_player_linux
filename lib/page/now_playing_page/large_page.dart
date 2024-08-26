@@ -54,8 +54,8 @@ class _NowPlayingPage_Large extends StatelessWidget {
                   children: [
                     _NowPlayingLargeViewSwitch(),
                     spacer,
-                    _DesktopLyricSwitch(),
-                    spacer,
+                    // _DesktopLyricSwitch(),
+                    // spacer,
                     _NowPlayingMoreAction(),
                   ],
                 ),

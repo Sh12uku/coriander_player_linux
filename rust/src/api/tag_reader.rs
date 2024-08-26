@@ -7,15 +7,15 @@ use std::{
 };
 
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TaggedFileExt};
-use windows::{
-    core::Interface,
-    core::HSTRING,
-    Storage::{
-        FileProperties::ThumbnailMode,
-        StorageFile,
-        Streams::{DataReader, IInputStream},
-    },
-};
+// use windows::{
+//     core::Interface,
+//     core::HSTRING,
+//     Storage::{
+//         FileProperties::ThumbnailMode,
+//         StorageFile,
+//         Streams::{DataReader, IInputStream},
+//     },
+// };
 
 use crate::frb_generated::StreamSink;
 
@@ -134,17 +134,20 @@ impl Audio {
         if lofty_support {
             if let Some(value) = Self::read_by_lofty(path, modified, created) {
                 return Some(value);
+            } else {
+                return Self::new_with_path(path, None);
             }
 
-            match Self::read_by_win_music_properties(path, modified, created) {
-                Ok(value) => Some(value),
-                Err(_) => Self::new_with_path(path, None),
-            }
+            // match Self::read_by_win_music_properties(path, modified, created) {
+            //     Ok(value) => Some(value),
+            //     Err(_) => Self::new_with_path(path, None),
+            // }
         } else {
-            match Self::read_by_win_music_properties(path, modified, created) {
-                Ok(value) => Some(value),
-                Err(_) => Self::new_with_path(path, None),
-            }
+            // match Self::read_by_win_music_properties(path, modified, created) {
+            //     Ok(value) => Some(value),
+            //     Err(_) => Self::new_with_path(path, None),
+            // }
+            return Self::new_with_path(path, None);
         }
     }
 
@@ -191,59 +194,59 @@ impl Audio {
         None
     }
 
-    /// 使用 Windows Api 获取音乐标签。会因为各种原因返回 Err
-    fn read_by_win_music_properties(
-        path: impl AsRef<Path>,
-        modified: u64,
-        created: u64,
-    ) -> Result<Self, windows::core::Error> {
-        let path = path.as_ref();
-        let storage_file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path))?.get()?;
-        let music_properties = storage_file
-            .Properties()?
-            .GetMusicPropertiesAsync()?
-            .get()?;
+    // /// 使用 Windows Api 获取音乐标签。会因为各种原因返回 Err
+    // fn read_by_win_music_properties(
+    //     path: impl AsRef<Path>,
+    //     modified: u64,
+    //     created: u64,
+    // ) -> Result<Self, windows::core::Error> {
+    //     let path = path.as_ref();
+    //     let storage_file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path))?.get()?;
+    //     let music_properties = storage_file
+    //         .Properties()?
+    //         .GetMusicPropertiesAsync()?
+    //         .get()?;
 
-        let duration: Duration = music_properties.Duration()?.into();
+    //     let duration: Duration = music_properties.Duration()?.into();
 
-        let mut title = music_properties
-            .Title()
-            .or(storage_file.Name())?
-            .to_string();
-        if title.is_empty() {
-            title = storage_file.Name()?.to_string();
-        }
+    //     let mut title = music_properties
+    //         .Title()
+    //         .or(storage_file.Name())?
+    //         .to_string();
+    //     if title.is_empty() {
+    //         title = storage_file.Name()?.to_string();
+    //     }
 
-        let mut artist = music_properties
-            .Artist()
-            .unwrap_or(HSTRING::from(UNKNOWN_STR))
-            .to_string();
-        if artist.is_empty() {
-            artist = UNKNOWN_STR.to_string();
-        }
+    //     let mut artist = music_properties
+    //         .Artist()
+    //         .unwrap_or(HSTRING::from(UNKNOWN_STR))
+    //         .to_string();
+    //     if artist.is_empty() {
+    //         artist = UNKNOWN_STR.to_string();
+    //     }
 
-        let mut album = music_properties
-            .Album()
-            .unwrap_or(HSTRING::from(UNKNOWN_STR))
-            .to_string();
-        if album.is_empty() {
-            album = UNKNOWN_STR.to_string();
-        }
+    //     let mut album = music_properties
+    //         .Album()
+    //         .unwrap_or(HSTRING::from(UNKNOWN_STR))
+    //         .to_string();
+    //     if album.is_empty() {
+    //         album = UNKNOWN_STR.to_string();
+    //     }
 
-        Ok(Audio {
-            title,
-            artist,
-            album,
-            track: Some(music_properties.TrackNumber()?),
-            duration: duration.as_secs(),
-            bitrate: Some(music_properties.Bitrate()? / 1000),
-            sample_rate: None,
-            path: path.to_string_lossy().to_string(),
-            modified,
-            created,
-            by: Some("Windows".to_string()),
-        })
-    }
+    //     Ok(Audio {
+    //         title,
+    //         artist,
+    //         album,
+    //         track: Some(music_properties.TrackNumber()?),
+    //         duration: duration.as_secs(),
+    //         bitrate: Some(music_properties.Bitrate()? / 1000),
+    //         sample_rate: None,
+    //         path: path.to_string_lossy().to_string(),
+    //         modified,
+    //         created,
+    //         by: Some("Windows".to_string()),
+    //     })
+    // }
 }
 
 #[derive(Debug)]
@@ -384,25 +387,25 @@ impl AudioFolder {
     }
 }
 
-fn _get_picture_by_windows(path: String) -> Result<Vec<u8>, windows::core::Error> {
-    let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path))?.get()?;
-    let thumbnail = file
-        .GetThumbnailAsyncOverloadDefaultSizeDefaultOptions(ThumbnailMode::MusicView)?
-        .get()?;
+// fn _get_picture_by_windows(path: String) -> Result<Vec<u8>, windows::core::Error> {
+//     let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path))?.get()?;
+//     let thumbnail = file
+//         .GetThumbnailAsyncOverloadDefaultSizeDefaultOptions(ThumbnailMode::MusicView)?
+//         .get()?;
 
-    let size = thumbnail.Size()? as u32;
-    let stream: IInputStream = thumbnail.cast()?;
+//     let size = thumbnail.Size()? as u32;
+//     let stream: IInputStream = thumbnail.cast()?;
 
-    let mut buffer = vec![0u8; size as usize];
-    let data_reader = DataReader::CreateDataReader(&stream)?;
-    data_reader.LoadAsync(size)?.get()?;
-    data_reader.ReadBytes(&mut buffer)?;
+//     let mut buffer = vec![0u8; size as usize];
+//     let data_reader = DataReader::CreateDataReader(&stream)?;
+//     data_reader.LoadAsync(size)?.get()?;
+//     data_reader.ReadBytes(&mut buffer)?;
 
-    data_reader.Close()?;
-    stream.Close()?;
+//     data_reader.Close()?;
+//     stream.Close()?;
 
-    Ok(buffer)
-}
+//     Ok(buffer)
+// }
 
 /// for Flutter  
 /// 如果无法通过 Lofty 获取则通过 Windows 获取
@@ -412,9 +415,9 @@ pub fn get_picture_from_path(path: String) -> Option<Vec<u8>> {
         return Some(tag.pictures().first()?.data().to_vec());
     }
 
-    if let Ok(pic) = _get_picture_by_windows(path) {
-        return Some(pic);
-    }
+    // if let Ok(pic) = _get_picture_by_windows(path) {
+    //     return Some(pic);
+    // }
 
     None
 }
