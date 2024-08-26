@@ -34,7 +34,7 @@ class AppSettings {
   Size windowSize = const Size(1280, 756);
 
   String? fontFamily;
-  String? fontPath;
+  // String? fontPath;
 
   late String artistSplitPattern = artistSeparator.join("|");
 
@@ -157,10 +157,10 @@ class AppSettings {
     }
 
     final ff = settingsMap["FontFamily"];
-    final fp = settingsMap["FontPath"];
+    // final fp = settingsMap["FontPath"];
     if (ff != null) {
       _instance.fontFamily = ff;
-      _instance.fontPath = fp;
+      // _instance.fontPath = fp;
     }
   }
 
@@ -178,7 +178,7 @@ class AppSettings {
       "WindowSize":
       "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
       "FontFamily": fontFamily,
-      "FontPath": fontPath,
+      // "FontPath": fontPath,
     };
 
     final settingsStr = json.encode(settingsMap);

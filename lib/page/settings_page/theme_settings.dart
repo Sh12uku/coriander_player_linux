@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:coriander_player/src/rust/api/installed_font.dart';
 import 'package:flutter/services.dart';
 import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/component/settings_tile.dart';
@@ -8,6 +7,7 @@ import 'package:coriander_player/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:system_fonts/system_fonts.dart';
 
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({super.key});
@@ -166,7 +166,7 @@ class SelectFontCombobox extends StatelessWidget {
     return SettingsTile(
       description: "自定义字体",
       action: FutureBuilder(
-        future: getInstalledFonts(),
+        future: SystemFonts().loadAllFonts(),
         builder: (context, snapshot) {
           final theme = Provider.of<ThemeProvider>(context);
           return switch (snapshot.connectionState) {
@@ -178,34 +178,38 @@ class SelectFontCombobox extends StatelessWidget {
                     dropdownMenuEntries: snapshot.data!
                         .map((font) => DropdownMenuEntry(
                               value: font,
-                              label: font.fullName,
+                              label: font,
                             ))
                         .toList(),
                     onSelected: (font) async {
                       if (font == null) return;
 
-                      try {
-                        final fontLoader = FontLoader(font.fullName);
-                        fontLoader.addFont(
-                          File(font.path).readAsBytes().then((value) {
-                            return ByteData.sublistView(value);
-                          }),
-                        );
-                        await fontLoader.load();
-                        ThemeProvider.instance.changeFontFamily(font.fullName);
-
-                        final settings = AppSettings.instance;
-                        settings.fontFamily = font.fullName;
-                        settings.fontPath = font.path;
-                        await settings.saveSettings();
-                      } catch (err) {
-                        ThemeProvider.instance.changeFontFamily(null);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(err.toString())),
-                          );
-                        }
-                      }
+                      // try {
+                      //   final fontLoader = FontLoader(font);
+                      //   fontLoader.addFont(
+                      //     File(font.path).readAsBytes().then((value) {
+                      //       return ByteData.sublistView(value);
+                      //     }),
+                      //   );
+                      //   await fontLoader.load();
+                      //   ThemeProvider.instance.changeFontFamily(font.fullName);
+                      //
+                      //   final settings = AppSettings.instance;
+                      //   settings.fontFamily = font.fullName;
+                      //   settings.fontPath = font.path;
+                      //   await settings.saveSettings();
+                      // } catch (err) {
+                      //   ThemeProvider.instance.changeFontFamily(null);
+                      //   if (context.mounted) {
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(content: Text(err.toString())),
+                      //     );
+                      //   }
+                      // }
+                      ThemeProvider.instance.changeFontFamily(font);
+                      final settings = AppSettings.instance;
+                      settings.fontFamily = font;
+                      await settings.saveSettings();
                     },
                   ),
             _ => const SizedBox(
@@ -218,4 +222,21 @@ class SelectFontCombobox extends StatelessWidget {
       ),
     );
   }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return SettingsTile(
+  //     description: "自定义字体",
+  //     action: SystemFontSelector(
+  //       isFontPreviewEnabled: true,
+  //       onFontSelected: (font){
+  //         final settings = AppSettings.instance;
+  //         settings.fontFamily = font;
+  //         ThemeProvider.instance.changeFontFamily(font);
+  //
+  //         settings.saveSettings();
+  //       },
+  //     ),
+  //   );
+  // }
 }

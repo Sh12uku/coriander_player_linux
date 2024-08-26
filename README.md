@@ -5,7 +5,8 @@
 
 正在学习开发Flutter应用，不保证所有bug都能修复（逃
 
-~~该播放器拥有桌面歌词组件。这个桌面歌词组件也可以给别的音乐播放器使用。请见 [desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git)~~
+~~该播放器拥有桌面歌词组件。这个桌面歌词组件也可以给别的音乐播放器使用。请见 [desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git)~~  
+
 Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 ## 安装

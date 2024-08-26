@@ -6,9 +6,9 @@ import 'package:coriander_player/entry.dart';
 import 'package:coriander_player/src/rust/frb_generated.dart';
 import 'package:coriander_player/theme_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:system_fonts/system_fonts.dart';
 
 Future<void> initWindow() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,18 +34,20 @@ Future<void> main() async {
     await AppSettings.readFromJson();
     final settings = AppSettings.instance;
     if (settings.fontFamily != null) {
-      try {
-        final fontLoader = FontLoader(settings.fontFamily!);
-
-        fontLoader.addFont(
-          File(settings.fontPath!).readAsBytes().then((value) {
-            return ByteData.sublistView(value);
-          }),
-        );
-        fontLoader.load().whenComplete(() {
-          ThemeProvider.instance.changeFontFamily(settings.fontFamily!);
-        });
-      } catch (_) {}
+      // try {
+      //   final fontLoader = FontLoader(settings.fontFamily!);
+      //
+      //   fontLoader.addFont(
+      //     File(settings.fontPath!).readAsBytes().then((value) {
+      //       return ByteData.sublistView(value);
+      //     }),
+      //   );
+      //   fontLoader.load().whenComplete(() {
+      //     ThemeProvider.instance.changeFontFamily(settings.fontFamily!);
+      //   });
+      // } catch (_) {}
+      SystemFonts().loadFont(settings.fontFamily!);
+      ThemeProvider.instance.changeFontFamily(settings.fontFamily!);
     }
   }
   if (File("$supportPath/app_preference.json").existsSync()) {
