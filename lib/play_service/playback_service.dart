@@ -36,8 +36,8 @@ class PlaybackService extends ChangeNotifier {
   late StreamSubscription<Duration> _durationStreamSub;
   late StreamSubscription<Duration> _positionStreamSub;
 
-  late Duration _duration;
-  late Duration _position;
+  Duration _duration = Duration(seconds: 1);
+  Duration _position = Duration.zero;
 
   // late StreamSubscription _smtcEventStreamSub;
 
@@ -97,9 +97,9 @@ class PlaybackService extends ChangeNotifier {
   late final _shuffle = ValueNotifier(false);
   ValueNotifier<bool> get shuffle => _shuffle;
 
-  double get length => _duration.inMilliseconds / 1000;
+  Duration get length => _duration;
 
-  double get position => _position.inMilliseconds / 1000;
+  Duration get position => _position;
 
   PlayerState get playerState => _player.state;
 

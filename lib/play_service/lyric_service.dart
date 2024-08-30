@@ -77,7 +77,7 @@ class LyricService extends ChangeNotifier {
 
       final next = value.lines.indexWhere((element) {
         var position = playService.playbackService.position;
-        return element.start.inMilliseconds / 1000 > position;
+        return element.start > position;
       });
 
       _nextLyricLine = next == -1 ? value.lines.length : next;

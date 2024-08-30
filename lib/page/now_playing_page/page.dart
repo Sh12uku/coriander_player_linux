@@ -447,12 +447,12 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
                   builder: (context, _) =>
                       StreamBuilder<Duration>(
                         stream: playbackService.positionStream,
-                        initialData: Duration(milliseconds: (playbackService.position * 1000).toInt()),
+                        initialData: playbackService.position,
                         builder: (context,
                             AsyncSnapshot<Duration> positionSnapshot) {
-                          double currentValue = 0.0;
+                          Duration currentValue = Duration.zero;
                           if (positionSnapshot.hasData) {
-                            currentValue = positionSnapshot.data!.inSeconds.toDouble();
+                            currentValue = positionSnapshot.data!;
                             if (currentValue > nowPlayingLength) {
                               currentValue = nowPlayingLength;
                             }
@@ -462,8 +462,8 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
                             activeColor: scheme.primary,
                             inactiveColor: scheme.outline,
                             min: 0.0,
-                            max: nowPlayingLength,
-                            value: isDragging ? dragPosition.value : currentValue,
+                            max: nowPlayingLength.inMilliseconds / 1000,
+                            value: isDragging ? dragPosition.value : (currentValue.inMilliseconds / 1000),
                             label: Duration(seconds: (dragPosition.value).toInt()).toStringHMMSS(),
                             onChangeStart: (value) {
                               isDragging = true;
@@ -520,7 +520,7 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
             children: [
               StreamBuilder<Duration>(
                 stream: playbackService.positionStream,
-                initialData: Duration(milliseconds: (playbackService.position * 1000).toInt()),
+                initialData: playbackService.position,
                 builder: (context,AsyncSnapshot<Duration> snapshot) {
                   final pos = snapshot.data!;
                   return Text(
@@ -530,7 +530,7 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
                 },
               ),
               Text(
-                Duration(milliseconds: (nowPlayingLength * 1000).toInt())
+                nowPlayingLength
                     .toStringHMMSS(),
                 style: TextStyle(color: scheme.onSecondaryContainer),
               ),

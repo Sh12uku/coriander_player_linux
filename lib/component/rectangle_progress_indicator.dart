@@ -29,7 +29,7 @@ class _RectangleProgressIndicatorState
   void initState() {
     super.initState();
     subscription = PlayService.instance.playbackService.positionStream.listen((event) async {
-      progress.value = event.inMilliseconds / PlayService.instance.playbackService.length;
+      progress.value = event.inMilliseconds / PlayService.instance.playbackService.length.inMilliseconds;
     });
   }
 
