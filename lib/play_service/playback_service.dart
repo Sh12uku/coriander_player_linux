@@ -103,13 +103,12 @@ class PlaybackService extends ChangeNotifier {
 
   PlayerState get playerState => _player.state;
 
-  double get volumeDsp => 1.0;
+  double get volumeDsp => _player.volume;
 
-  /// 修改解码时的音量（不影响 Windows 系统音量）
+  /// 播放器音量
   void setVolumeDsp(double volume) {
-    // _player.setVolumeDsp(volume);
-    // _pref.volumeDsp = volume;
-    _pref.volumeDsp = 1.0;
+    _player.setVolume(volume);
+    _pref.volumeDsp = volume;
   }
 
   Stream<Duration> get positionStream => _player.onPositionChanged.asBroadcastStream();

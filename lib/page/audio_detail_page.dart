@@ -117,18 +117,19 @@ class AudioDetailPage extends StatelessWidget {
               spacing: 8.0,
               children: [
                 Text("路径", style: styleTitle),
-                TextButton(
-                  onPressed: () async {
-                    // final result = await showInExplorer(path: audio.path);
-                    final Uri path = Uri.parse(audio.path);
-                    if(!await launchUrl(path) && context.mounted){
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("打开失败")),
-                      );
-                    }
-                  },
-                  child: const Text("在文件资源管理器中显示"),
-                )
+                // TextButton(
+                //   onPressed: () async {
+                //     // final result = await showInExplorer(path: audio.path);
+                //     // final Uri path = Uri.parse(audio.path);
+                //     final Uri path = Uri.file(audio.path);
+                //     if(!await launchUrl(path) && context.mounted){
+                //       ScaffoldMessenger.of(context).showSnackBar(
+                //         const SnackBar(content: Text("打开失败")),
+                //       );
+                //     }
+                //   },
+                //   child: const Text("在文件资源管理器中显示"),
+                // )
               ],
             ),
             const SizedBox(height: 8),
