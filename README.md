@@ -70,10 +70,8 @@ Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 ## 编译
 
-1. 开发 flutter 需要的环境
-2. 需要编译 Coriander Player（本仓库） 软件本体~~和 desktop_lyric。[desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git) 也是 Flutter 应用~~，直接编译即可
-   ~~3. 要把得到的 desktop_lyric 产物放在软件目录的 `desktop_lyric/` 目录下~~
-   ~~4. 编译后要把 BASS 库的 64 位的 `bass.dll`, `bassape.dll`, `bassdsd.dll`, `bassflac.dll`, `bassmidi.dll`, `bassopus.dll`, `basswv.dll` 放在软件目录的 `BASS` 文件夹下~~
+1. 开发 flutter 需要的环境以及flutter_rust_bridge（rust环境，Corrosion）
+2. 直接编译 Coriander Player（本仓库） 软件本体  
 
 ## 歌词特性解释
 
