@@ -1,4 +1,4 @@
-# Coriander Player：一款使用 Material You 配色的本地音乐播放器。
+# Coriander Player Linux：一款使用 Material You 配色的本地音乐播放器。
 
 ![音乐页](软件截图/音乐页.png)
 
