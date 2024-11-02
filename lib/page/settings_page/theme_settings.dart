@@ -1,7 +1,3 @@
-import 'dart:io';
-// import 'package:coriander_player/src/rust/api/installed_font.dart';
-import 'package:coriander_player/utils.dart';
-import 'package:flutter/services.dart';
 import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/component/settings_tile.dart';
 import 'package:coriander_player/page/settings_page/theme_picker_dialog.dart';
@@ -167,116 +163,78 @@ class SelectFontCombobox extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsTile(
       description: "自定义字体",
-      action: FilledButton.icon(
-        onPressed: () async {
-          final installedFont = await SystemFonts().loadAllFonts();
-          if (installedFont == null || installedFont.isEmpty) {
-            showTextOnSnackBar("无法获取字体");
-            return;
-          }
+      action: FutureBuilder(
+        future: SystemFonts().loadAllFonts(),
+        builder: (context, snapshot) {
+          final theme = Provider.of<ThemeProvider>(context);
+          return switch (snapshot.connectionState) {
+            ConnectionState.done => snapshot.data == null
+                ? const Center(child: Text("不可用"))
+                : DropdownMenu(
+                    menuHeight: 400,
+                    hintText: theme.fontFamily ?? "默认",
+                    dropdownMenuEntries: snapshot.data!
+                        .map((font) => DropdownMenuEntry(
+                              value: font,
+                              label: font,
+                            ))
+                        .toList(),
+                    onSelected: (font) async {
+                      if (font == null) return;
 
-          if (context.mounted) {
-            final selectedFont = await showDialog<InstalledFont>(
-              context: context,
-              builder: (context) => _FontSelector(installedFont: installedFont),
-            );
-            if (selectedFont == null) return;
-
-            // try {
-            //   final fontLoader = FontLoader(selectedFont.fullName);
-            //   fontLoader.addFont(
-            //     File(selectedFont.path).readAsBytes().then((value) {
-            //       return ByteData.sublistView(value);
-            //     }),
-            //   );
-            //   await fontLoader.load();
-            //   ThemeProvider.instance.changeFontFamily(selectedFont.fullName);
-            //
-            //   final settings = AppSettings.instance;
-            //   settings.fontFamily = selectedFont.fullName;
-            //   settings.fontPath = selectedFont.path;
-            //   await settings.saveSettings();
-            // } catch (err) {
-            //   ThemeProvider.instance.changeFontFamily(null);
-            //   LOGGER.e("[select font] $err");
-            //   if (context.mounted) {
-            //     showTextOnSnackBar(err.toString());
-            //   }
-            // }
-          }
+                      // try {
+                      //   final fontLoader = FontLoader(font);
+                      //   fontLoader.addFont(
+                      //     File(font.path).readAsBytes().then((value) {
+                      //       return ByteData.sublistView(value);
+                      //     }),
+                      //   );
+                      //   await fontLoader.load();
+                      //   ThemeProvider.instance.changeFontFamily(font.fullName);
+                      //
+                      //   final settings = AppSettings.instance;
+                      //   settings.fontFamily = font.fullName;
+                      //   settings.fontPath = font.path;
+                      //   await settings.saveSettings();
+                      // } catch (err) {
+                      //   ThemeProvider.instance.changeFontFamily(null);
+                      //   if (context.mounted) {
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(content: Text(err.toString())),
+                      //     );
+                      //   }
+                      // }
+                      ThemeProvider.instance.changeFontFamily(font);
+                      final settings = AppSettings.instance;
+                      settings.fontFamily = font;
+                      await settings.saveSettings();
+                    },
+                  ),
+            _ => const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(),
+              ),
+          };
         },
-        label: const Text("选择字体"),
-        icon: const Icon(Symbols.text_fields),
       ),
     );
   }
-}
 
-class _FontSelector extends StatelessWidget {
-  const _FontSelector({required this.installedFont});
-  final List<InstalledFont> installedFont;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeProvider>(context);
-    final scheme = Theme.of(context).colorScheme;
-    return Dialog(
-      insetPadding: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: SizedBox(
-        width: 350.0,
-        height: 400,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  "选择字体",
-                  style: TextStyle(
-                    color: scheme.onSurface,
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Text("当前字体：${theme.fontFamily ?? "默认"}"),
-              const SizedBox(height: 8.0),
-              Expanded(
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: ListView.builder(
-                    itemCount: installedFont.length,
-                    itemExtent: 48,
-                    itemBuilder: (context, i) => ListTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      title: Text(installedFont[i].fullName),
-                      onTap: () => Navigator.pop(context, installedFont[i]),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("取消"),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // @override
+  // Widget build(BuildContext context) {
+  //   return SettingsTile(
+  //     description: "自定义字体",
+  //     action: SystemFontSelector(
+  //       isFontPreviewEnabled: true,
+  //       onFontSelected: (font){
+  //         final settings = AppSettings.instance;
+  //         settings.fontFamily = font;
+  //         ThemeProvider.instance.changeFontFamily(font);
+  //
+  //         settings.saveSettings();
+  //       },
+  //     ),
+  //   );
+  // }
 }

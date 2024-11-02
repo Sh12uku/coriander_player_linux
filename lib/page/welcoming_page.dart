@@ -3,6 +3,7 @@ import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/component/build_index_state_view.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/app_paths.dart' as app_paths;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -60,7 +61,7 @@ class FolderSelectorView extends StatefulWidget {
 class _FolderSelectorViewState extends State<FolderSelectorView> {
   bool selecting = true;
   final List<String> folders = [];
-  final applicationSupportDirectory = getAppDataDir();
+  final applicationSupportDirectory = getApplicationSupportDirectory();
 
   @override
   Widget build(BuildContext context) {

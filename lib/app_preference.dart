@@ -113,7 +113,7 @@ class AppPreference {
 
   Future<void> save() async {
     try {
-      final supportPath = (await getAppDataDir()).path;
+      final supportPath = (await getApplicationSupportDirectory()).path;
       final appPreferencePath = "$supportPath/app_preference.json";
 
       Map prefMap = {
@@ -141,7 +141,7 @@ class AppPreference {
 
   static Future<void> read() async {
     try {
-      final supportPath = (await getAppDataDir()).path;
+      final supportPath = (await getApplicationSupportDirectory()).path;
       final appPreferencePath = "$supportPath/app_preference.json";
 
       final prefJson = await File(appPreferencePath).readAsString();

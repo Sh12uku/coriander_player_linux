@@ -62,9 +62,9 @@ Future<void> main() async {
   await HotkeysHelper.unregisterAll();
   HotkeysHelper.registerHotKeys();
 
-  await migrateAppData();
+  // await migrateAppData();
 
-  final supportPath = (await getAppDataDir()).path;
+  final supportPath = (await getApplicationSupportDirectory()).path;
   if (File("$supportPath/settings.json").existsSync()) {
     await AppSettings.readFromJson();
     // await loadPrefFont();

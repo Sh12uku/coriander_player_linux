@@ -1,5 +1,5 @@
 import 'package:coriander_player/app_settings.dart';
-import 'package:coriander_player/src/rust/api/utils.dart';
+// import 'package:coriander_player/src/rust/api/utils.dart';
 import 'package:coriander_player/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';

@@ -35,6 +35,7 @@ class AppSettings {
   Size windowSize = const Size(1280, 756);
 
   String? fontFamily;
+
   // String? fontPath;
 
   late String artistSplitPattern = artistSeparator.join("|");
@@ -83,7 +84,7 @@ class AppSettings {
     }
     if (!_instance.useSystemThemeMode) {
       _instance.themeMode =
-      settingsMap["ThemeMode"] == 0 ? ThemeMode.light : ThemeMode.dark;
+          settingsMap["ThemeMode"] == 0 ? ThemeMode.light : ThemeMode.dark;
     }
 
     _instance.dynamicTheme = settingsMap["DynamicTheme"] == 1 ? true : false;
@@ -105,7 +106,7 @@ class AppSettings {
 
   static Future<void> readFromJson() async {
     try {
-      final supportPath = (await getAppDataDir()).path;
+      final supportPath = (await getApplicationSupportDirectory()).path;
       final settingsPath = "$supportPath/settings.json";
 
       final settingsStr = File(settingsPath).readAsStringSync();
@@ -142,8 +143,8 @@ class AppSettings {
       final as = settingsMap["ArtistSeparator"];
       if (as != null) {
         _instance.artistSeparator = as;
-      _instance.artistSplitPattern = _instance.artistSeparator.join("|");
-    }
+        _instance.artistSplitPattern = _instance.artistSeparator.join("|");
+      }
 
       final llf = settingsMap["LocalLyricFirst"];
       if (llf != null) {
@@ -159,9 +160,10 @@ class AppSettings {
 
       final ff = settingsMap["FontFamily"];
       // final fp = settingsMap["FontPath"];
-    if (ff != null) {
-      _instance.fontFamily = ff;
-      // _instance.fontPath = fp;}
+      if (ff != null) {
+        _instance.fontFamily = ff;
+        // _instance.fontPath = fp;
+      }
     } catch (err, trace) {
       LOGGER.e(err, stackTrace: trace);
     }
@@ -180,13 +182,13 @@ class AppSettings {
         "ArtistSeparator": artistSeparator,
         "LocalLyricFirst": localLyricFirst,
         "WindowSize":
-        "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
+            "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
         "FontFamily": fontFamily,
         // "FontPath": fontPath,
-    };
+      };
 
       final settingsStr = json.encode(settingsMap);
-      final supportPath = (await getAppDataDir()).path;
+      final supportPath = (await getApplicationSupportDirectory()).path;
       final settingsPath = "$supportPath/settings.json";
       final output = await File(settingsPath).create(recursive: true);
       output.writeAsStringSync(settingsStr);

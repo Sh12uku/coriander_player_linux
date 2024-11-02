@@ -88,7 +88,7 @@ class _AudioLibraryEditorDialogState extends State<AudioLibraryEditorDialog> {
     (i) => AudioLibrary.instance.folders[i].path,
   );
 
-  // final applicationSupportDirectory = getAppDataDir();
+  // final applicationSupportDirectory = getApplicationSupportDirectory();
   final applicationSupportDirectory = getApplicationSupportDirectory();
 
   bool editing = true;

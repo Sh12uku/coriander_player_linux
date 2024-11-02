@@ -11,6 +11,7 @@ import 'package:coriander_player/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:coriander_player/app_paths.dart' as app_paths;
+import 'package:path_provider/path_provider.dart';
 
 class UpdatingPage extends StatelessWidget {
   const UpdatingPage({super.key});
@@ -23,7 +24,7 @@ class UpdatingPage extends StatelessWidget {
       backgroundColor: scheme.surface,
       body: Center(
         child: FutureBuilder(
-          future: getAppDataDir(),
+          future: getApplicationSupportDirectory(),
           builder: (context, snapshot) {
             if (snapshot.data == null) {
               return const Center(

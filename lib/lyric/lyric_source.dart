@@ -55,7 +55,7 @@ Map<String, LyricSource> LYRIC_SOURCES = {};
 
 Future<void> readLyricSources() async {
   try {
-    final supportPath = (await getAppDataDir()).path;
+    final supportPath = (await getApplicationSupportDirectory()).path;
     final lyricSourcePath = "$supportPath/lyric_source.json";
 
     final lyricSourceStr = File(lyricSourcePath).readAsStringSync();
@@ -72,7 +72,7 @@ Future<void> readLyricSources() async {
 
 Future<void> saveLyricSources() async {
   try {
-    final supportPath = (await getAppDataDir()).path;
+    final supportPath = (await getApplicationSupportDirectory()).path;
     final lyricSourcePath = "$supportPath/lyric_source.json";
 
     Map<String, Map> lyricSourceMaps = {};

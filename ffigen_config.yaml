@@ -1,11 +1,11 @@
 # dart run ffigen --config ffigen_config.yaml
 
 # config for generating bass.dart
-# output: 'bass.g.dart'
-# headers:
-#   entry-points:
-#     - 'BASS/bass.h'
-# name: 'Bass'
+ output: 'lib/src/bass/bass.dart'
+ headers:
+   entry-points:
+     - 'BASS/bass.h'
+ name: 'Bass'
 
 # config for generating bass_wasapi.dart
 # output: 'bass_wasapi.g.dart'
