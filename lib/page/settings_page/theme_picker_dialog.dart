@@ -1,5 +1,6 @@
 import 'package:coriander_player/app_settings.dart';
-import 'package:coriander_player/extensions.dart';
+import 'package:coriander_player/utils.dart';
+import 'package:coriander_player/hotkeys_helper.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -43,17 +44,23 @@ class _ThemePickerDialogState extends State<ThemePickerDialog> {
                   ),
                 ),
               ),
-              TextField(
-                autofocus: true,
-                controller: rgbHexTextEditingController,
-                onChanged: (value) {
-                  setState(() {
-                    selectedColor = fromRGBHexString(value);
-                  });
-                },
-                decoration: const InputDecoration(
-                  labelText: "Hex RGB",
-                  border: OutlineInputBorder(),
+              Focus(
+                onFocusChange: HotkeysHelper.onFocusChanges,
+                child: TextField(
+                  autofocus: true,
+                  controller: rgbHexTextEditingController,
+                  onChanged: (value) {
+                    final c = fromRGBHexString(value);
+                    if (c != null) {
+                      setState(() {
+                        selectedColor = c;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: "Hex RGB",
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
               const SizedBox(height: 16.0),

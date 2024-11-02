@@ -1,5 +1,6 @@
 import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/component/audio_tile.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/page/uni_page.dart';
@@ -17,11 +18,11 @@ class PlaylistDetailPage extends StatefulWidget {
 }
 
 class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
-  late final contentList = widget.playlist.audios.values.toList();
   final multiSelectController = MultiSelectController<Audio>();
 
   @override
   Widget build(BuildContext context) {
+    final contentList = widget.playlist.audios.values.toList();
     final scheme = Theme.of(context).colorScheme;
 
     return UniPage<Audio>(
@@ -48,6 +49,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 widget.playlist.audios.remove(item.path);
               }
             });
+            multiSelectController.useMultiSelectView(false);
           },
           style: ButtonStyle(
             backgroundColor: WidgetStatePropertyAll(scheme.error),
@@ -68,10 +70,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           method: (list, order) {
             switch (order) {
               case SortOrder.ascending:
-                list.sort((a, b) => a.title.compareTo(b.title));
+                list.sort((a, b) => a.title.localeCompareTo(b.title));
                 break;
               case SortOrder.decending:
-                list.sort((a, b) => b.title.compareTo(a.title));
+                list.sort((a, b) => b.title.localeCompareTo(a.title));
                 break;
             }
           },
@@ -82,10 +84,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           method: (list, order) {
             switch (order) {
               case SortOrder.ascending:
-                list.sort((a, b) => a.artist.compareTo(b.artist));
+                list.sort((a, b) => a.artist.localeCompareTo(b.artist));
                 break;
               case SortOrder.decending:
-                list.sort((a, b) => b.artist.compareTo(a.artist));
+                list.sort((a, b) => b.artist.localeCompareTo(a.artist));
                 break;
             }
           },
@@ -96,10 +98,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           method: (list, order) {
             switch (order) {
               case SortOrder.ascending:
-                list.sort((a, b) => a.album.compareTo(b.album));
+                list.sort((a, b) => a.album.localeCompareTo(b.album));
                 break;
               case SortOrder.decending:
-                list.sort((a, b) => b.album.compareTo(a.album));
+                list.sort((a, b) => b.album.localeCompareTo(a.album));
                 break;
             }
           },

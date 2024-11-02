@@ -4,7 +4,7 @@ import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/lyric/lrc.dart';
 import 'package:coriander_player/lyric/lyric.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
-import 'package:coriander_player/search_helper.dart';
+import 'package:coriander_player/music_matcher.dart';
 import 'package:coriander_player/page/now_playing_page/component/vertical_lyric_view.dart';
 import 'package:coriander_player/play_service/play_service.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +47,7 @@ class SetLyricSourceBtn extends StatelessWidget {
 
 class _SetLyricSourceBtn extends StatelessWidget {
   final bool? isLocal;
-  const _SetLyricSourceBtn({super.key, this.isLocal});
+  const _SetLyricSourceBtn({this.isLocal});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +100,7 @@ class _SetLyricSourceBtn extends StatelessWidget {
 }
 
 class _SetLyricSourceDialog extends StatelessWidget {
-  const _SetLyricSourceDialog({super.key, required this.audio});
+  const _SetLyricSourceDialog({required this.audio});
 
   final Audio audio;
 
@@ -174,7 +174,6 @@ class _SetLyricSourceDialog extends StatelessWidget {
 
 class _LyricSourceTile extends StatefulWidget {
   const _LyricSourceTile({
-    super.key,
     required this.searchResult,
     required this.audio,
   });

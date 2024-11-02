@@ -2,6 +2,7 @@ import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/page/uni_page.dart';
 import 'package:coriander_player/play_service/play_service.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -42,9 +43,7 @@ class SortMethodComboBox<T> extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return MenuAnchor(
-      crossAxisUnconstrained: false,
       style: MenuStyle(
-        fixedSize: const WidgetStatePropertyAll(Size.fromWidth(141)),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
@@ -65,7 +64,6 @@ class SortMethodComboBox<T> extends StatelessWidget {
 
         return SizedBox(
           height: 40.0,
-          width: 141.0,
           child: Material(
             borderRadius: borderRadius,
             color: scheme.secondaryContainer,
@@ -82,6 +80,7 @@ class SortMethodComboBox<T> extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(left: 16.0, right: 12.0),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Symbols.sort,
@@ -89,17 +88,13 @@ class SortMethodComboBox<T> extends StatelessWidget {
                       color: scheme.onSecondaryContainer,
                     ),
                     const SizedBox(width: 4.0),
-                    Expanded(
-                      child: Text(
-                        currSortMethod.name,
-                        style: TextStyle(color: scheme.onSecondaryContainer),
-                      ),
+                    Text(
+                      currSortMethod.name,
+                      style: TextStyle(color: scheme.onSecondaryContainer),
                     ),
                     const SizedBox(width: 4.0),
                     Icon(
-                      menuController.isOpen
-                          ? Symbols.arrow_drop_up
-                          : Symbols.arrow_drop_down,
+                      Symbols.arrow_drop_down,
                       size: 24,
                       color: scheme.onSecondaryContainer,
                     ),
@@ -179,11 +174,9 @@ class AddAllToPlaylist extends StatelessWidget {
                 PLAYLISTS[i].audios[item.path] = item;
               }
             }
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                "成功将${multiSelectController.selected.length}首添加到歌单“${PLAYLISTS[i].name}”",
-              ),
-            ));
+            showTextOnSnackBar(
+              "成功将${multiSelectController.selected.length}首添加到歌单“${PLAYLISTS[i].name}”",
+            );
           },
           child: Text(PLAYLISTS[i].name),
         ),

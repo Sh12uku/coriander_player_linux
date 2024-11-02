@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:coriander_player/app_preference.dart';
+import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
 import 'package:coriander_player/src/rust/api/tag_reader.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:coriander_player/app_paths.dart' as app_paths;
 
 class UpdatingPage extends StatelessWidget {
@@ -22,9 +23,13 @@ class UpdatingPage extends StatelessWidget {
       backgroundColor: scheme.surface,
       body: Center(
         child: FutureBuilder(
-          future: getApplicationSupportDirectory(),
+          future: getAppDataDir(),
           builder: (context, snapshot) {
-            if (snapshot.data == null) return const SizedBox.shrink();
+            if (snapshot.data == null) {
+              return const Center(
+                child: Text("Fail to get app data dir."),
+              );
+            }
 
             return UpdatingStateView(indexPath: snapshot.data!);
           },
@@ -44,18 +49,20 @@ class UpdatingStateView extends StatefulWidget {
 }
 
 class _UpdatingStateViewState extends State<UpdatingStateView> {
-  late final Stream updateIndexStream;
+  late final Stream<IndexActionState> updateIndexStream;
   StreamSubscription? _subscription;
 
-  void whenIndexUpdated() {
-    Future.wait([
+  void whenIndexUpdated() async {
+    await Future.wait([
       AudioLibrary.initFromIndex(),
       readPlaylists(),
       readLyricSources(),
-    ]).whenComplete(() {
-      _subscription?.cancel();
-      context.go(app_paths.START_PAGES[AppPreference.instance.startPage]);
-    });
+    ]);
+    _subscription?.cancel();
+    final ctx = context;
+    if (ctx.mounted) {
+      ctx.go(app_paths.START_PAGES[AppPreference.instance.startPage]);
+    }
   }
 
   @override
@@ -65,7 +72,12 @@ class _UpdatingStateViewState extends State<UpdatingStateView> {
       indexPath: widget.indexPath.path,
     ).asBroadcastStream();
 
-    _subscription = updateIndexStream.listen(null, onDone: whenIndexUpdated);
+    _subscription = updateIndexStream.listen(
+      (action) {
+        LOGGER.i("[update index] ${action.progress}: ${action.message}");
+      },
+      onDone: whenIndexUpdated,
+    );
   }
 
   @override
@@ -78,6 +90,7 @@ class _UpdatingStateViewState extends State<UpdatingStateView> {
         stream: updateIndexStream,
         builder: (context, snapshot) {
           return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               LinearProgressIndicator(

@@ -1,8 +1,9 @@
 import 'package:coriander_player/app_paths.dart' as app_paths;
+import 'package:coriander_player/hotkeys_helper.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class UnionSearchResult {
   String query;
@@ -12,64 +13,47 @@ class UnionSearchResult {
   List<Album> album = [];
 
   UnionSearchResult(this.query);
-}
 
-class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
-
-  @override
-  State<SearchPage> createState() => _SearchPageState();
-}
-
-class _SearchPageState extends State<SearchPage> {
-  final editingController = TextEditingController();
-
-  UnionSearchResult unionSearch() {
-    final query = editingController.text;
+  static UnionSearchResult search(String query) {
     final result = UnionSearchResult(query);
+
+    final queryInLowerCase = query.toLowerCase();
     final library = AudioLibrary.instance;
 
     for (int i = 0; i < library.audioCollection.length; i++) {
-      if (library.audioCollection[i].title.contains(query)) {
+      if (library.audioCollection[i].title
+          .toLowerCase()
+          .contains(queryInLowerCase)) {
         result.audios.add(library.audioCollection[i]);
       }
     }
 
     for (Artist item in library.artistCollection.values) {
-      if (item.name.contains(query)) {
+      if (item.name.toLowerCase().contains(queryInLowerCase)) {
         result.artists.add(item);
       }
     }
 
     for (Album item in library.albumCollection.values) {
-      if (item.name.contains(query)) {
+      if (item.name.toLowerCase().contains(queryInLowerCase)) {
         result.album.add(item);
       }
     }
-
     return result;
   }
+}
 
-  void toUnionPage() {
-    final result = unionSearch();
-    context.push(
-      app_paths.UNION_SEARCH_RESULT_PAGE,
-      extra: result,
-    );
-  }
+final SEARCH_BAR_KEY = GlobalKey();
+
+class SearchPage extends StatelessWidget {
+  const SearchPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8.0),
-          bottomRight: Radius.circular(8.0),
-        ),
-      ),
+    return ColoredBox(
+      color: scheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -86,23 +70,29 @@ class _SearchPageState extends State<SearchPage> {
             const Padding(padding: EdgeInsets.only(bottom: 32.0)),
             SizedBox(
               width: 400,
-              child: TextField(
-                autofocus: true,
-                controller: editingController,
-
-                /// when 'enter' is pressed
-                onSubmitted: (_) => toUnionPage(),
-                decoration: InputDecoration(
-                  suffixIcon: Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: IconButton(
-                      tooltip: "搜索",
-                      icon: const Icon(Symbols.search),
-                      onPressed: toUnionPage,
+              child: Focus(
+                onFocusChange: HotkeysHelper.onFocusChanges,
+                child: Hero(
+                  tag: SEARCH_BAR_KEY,
+                  child: TextField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      suffixIcon: Padding(
+                        padding: EdgeInsets.only(right: 12.0),
+                        child: Icon(Symbols.search),
+                      ),
+                      hintText: "搜索歌曲、艺术家、专辑",
+                      border: OutlineInputBorder(),
                     ),
+
+                    /// when 'enter' is pressed
+                    onSubmitted: (String query) {
+                      context.push(
+                        app_paths.SEARCH_RESULT_PAGE,
+                        extra: UnionSearchResult.search(query),
+                      );
+                    },
                   ),
-                  hintText: "搜索歌曲、艺术家、专辑",
-                  border: const OutlineInputBorder(),
                 ),
               ),
             ),
@@ -110,11 +100,5 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    editingController.dispose();
   }
 }

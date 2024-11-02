@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/page/uni_page.dart';
 import 'package:coriander_player/page/uni_page_components.dart';
@@ -18,6 +20,7 @@ class UniDetailPage<P, S, T> extends StatefulWidget {
     required this.pref,
     required this.primaryContent,
     required this.primaryPic,
+    required this.backgroundPic,
     required this.picShape,
     required this.title,
     required this.subtitle,
@@ -38,7 +41,13 @@ class UniDetailPage<P, S, T> extends StatefulWidget {
   final PagePreference pref;
 
   final P primaryContent;
+
+  /// 用来展示内容图片，较高清
   final Future<ImageProvider?> primaryPic;
+
+  /// 当作毛玻璃的背景，较模糊
+  final Future<ImageProvider?> backgroundPic;
+
   final PicShape picShape;
 
   final String title;
@@ -149,69 +158,28 @@ class _UniDetailPageState<P, S, T> extends State<UniDetailPage<P, S, T>> {
 
   Widget result(MultiSelectController<S>? multiSelectController,
       List<Widget> actions, ColorScheme scheme) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8.0),
-          bottomRight: Radius.circular(8.0),
-        ),
-      ),
+    return ColoredBox(
+      color: scheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             // head
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _PrimaryContentPicture(
-                  pic: widget.primaryPic,
-                  picShape: widget.picShape,
-                ),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.title,
-                          style: TextStyle(
-                            fontSize: 22.0,
-                            color: scheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        widget.subtitle,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8.0),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: multiSelectController == null
-                            ? actions
-                            : multiSelectController.enableMultiSelectView
-                                ? widget.multiSelectViewActions!
-                                : actions,
-                      )
-                    ],
-                  ),
-                ),
-              ],
+            _UniDetailPageHeader(
+              pic: widget.primaryPic,
+              backgroundPic: widget.backgroundPic,
+              picShape: widget.picShape,
+              title: widget.title,
+              subtitle: widget.subtitle,
+              actions: actions,
+              multiSelectController: multiSelectController,
+              multiSelectViewActions: widget.multiSelectViewActions,
             ),
             const SizedBox(height: 16.0),
             Expanded(
               child: Material(
-                color: scheme.surface,
+                borderRadius: BorderRadius.circular(8.0),
+                type: MaterialType.transparency,
                 child: CustomScrollView(
                   slivers: [
                     // secondary content
@@ -278,49 +246,141 @@ class _UniDetailPageState<P, S, T> extends State<UniDetailPage<P, S, T>> {
 
 enum PicShape { oval, rrect }
 
-class _PrimaryContentPicture extends StatelessWidget {
-  const _PrimaryContentPicture(
-      {super.key, required this.pic, required this.picShape});
+class _UniDetailPageHeader extends StatelessWidget {
+  const _UniDetailPageHeader({
+    required this.pic,
+    required this.backgroundPic,
+    required this.picShape,
+    required this.title,
+    required this.subtitle,
+    this.multiSelectController,
+    required this.actions,
+    this.multiSelectViewActions,
+  });
 
   final Future<ImageProvider?> pic;
+  final Future<ImageProvider?> backgroundPic;
   final PicShape picShape;
+
+  final String title;
+  final String subtitle;
+  final MultiSelectController? multiSelectController;
+  final List<Widget> actions;
+  final List<Widget>? multiSelectViewActions;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: pic,
-      builder: (context, snapshot) {
-        final scheme = Theme.of(context).colorScheme;
-        final placeholder = Icon(
-          Symbols.broken_image,
-          size: 200.0,
-          color: scheme.onSurface,
-        );
-        if (snapshot.data == null) {
-          return Flexible(
-            child: placeholder,
-          );
-        }
-        return switch (picShape) {
-          PicShape.oval => ClipOval(
-              child: Image(
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final brightness = theme.brightness;
+    return SizedBox(
+      height: 200,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          FutureBuilder(
+            future: backgroundPic,
+            builder: (context, snapshot) {
+              if (snapshot.data == null) return const SizedBox.shrink();
+
+              return Image(
                 image: snapshot.data!,
-                width: 200.0,
-                height: 200.0,
-                errorBuilder: (_, __, ___) => placeholder,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              );
+            },
+          ),
+          switch (brightness) {
+            Brightness.dark => const ColoredBox(color: Colors.black38),
+            Brightness.light => const ColoredBox(color: Colors.white30),
+          },
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+            child: const ColoredBox(color: Colors.transparent),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              FutureBuilder(
+                future: pic,
+                builder: (context, snapshot) {
+                  final placeholder = Icon(
+                    Symbols.broken_image,
+                    size: 200.0,
+                    color: scheme.onSurface,
+                  );
+                  return switch (snapshot.connectionState) {
+                    ConnectionState.done => snapshot.data == null
+                        ? placeholder
+                        : switch (picShape) {
+                            PicShape.oval => ClipOval(
+                                child: Image(
+                                  image: snapshot.data!,
+                                  width: 200.0,
+                                  height: 200.0,
+                                  errorBuilder: (_, __, ___) => placeholder,
+                                ),
+                              ),
+                            PicShape.rrect => ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: Image(
+                                  image: snapshot.data!,
+                                  width: 200.0,
+                                  height: 200.0,
+                                  errorBuilder: (_, __, ___) => placeholder,
+                                ),
+                              ),
+                          },
+                    _ => const SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                  };
+                },
               ),
-            ),
-          PicShape.rrect => ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image(
-                image: snapshot.data!,
-                width: 200.0,
-                height: 200.0,
-                errorBuilder: (_, __, ___) => placeholder,
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 22.0,
+                          color: scheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 14.0,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: multiSelectController == null
+                          ? actions
+                          : multiSelectController!.enableMultiSelectView
+                              ? multiSelectViewActions!
+                              : actions,
+                    )
+                  ],
+                ),
               ),
-            ),
-        };
-      },
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

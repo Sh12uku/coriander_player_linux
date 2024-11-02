@@ -1,7 +1,7 @@
 name: coriander_player
 description: A new Flutter project.
 publish_to: 'none'
-version: 1.1.0
+version: 1.2.0
 
 environment:
   sdk: '>=3.1.4 <4.0.0'
@@ -15,7 +15,7 @@ dependencies:
   provider: ^6.1.1
   rust_builder:
     path: rust_builder
-  flutter_rust_bridge: 2.3.0
+  flutter_rust_bridge: ^2.4.0
   path_provider: ^2.0.15
   flutter_localizations:
     sdk: flutter
@@ -33,6 +33,10 @@ dependencies:
   music_api:
     git:
       url: https://github.com/Ferry-200/music_api_dart.git
+      ref: c6f3e0abd9c6295b3678ce10d30bc09debda9abe
+  pinyin: ^3.3.0
+  hotkey_manager: ^0.2.3
+  logger: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +44,7 @@ dev_dependencies:
   flutter_lints: ^3.0.2
   integration_test:
     sdk: flutter
+  ffigen: ^14.0.1
 
 flutter:
   uses-material-design: true

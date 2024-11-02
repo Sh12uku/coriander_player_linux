@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:coriander_player/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,7 +8,7 @@ import 'package:window_manager/window_manager.dart';
 
 class AppSettings {
   static final github = GitHub();
-  static const String version = "1.1.0";
+  static const String version = "1.2.0";
 
   /// 主题模式：亮 / 暗
   /// 默认跟随系统
@@ -43,26 +44,26 @@ class AppSettings {
   static AppSettings get instance => _instance;
 
   /// 获取系统主题模式
-  /*static ThemeMode getWindowsThemeMode() {
-    final systemTheme = SystemTheme.getSystemTheme();
-
-    final isDarkMode = (((5 * systemTheme.fore.$3) +
-        (2 * systemTheme.fore.$2) +
-        systemTheme.fore.$4) >
-        (8 * 128));
-    return isDarkMode ? ThemeMode.dark : ThemeMode.light;
-  }*/
+  // static ThemeMode getWindowsThemeMode() {
+  //   final systemTheme = SystemTheme.getSystemTheme();
+  //
+  //   final isDarkMode = (((5 * systemTheme.fore.$3) +
+  //       (2 * systemTheme.fore.$2) +
+  //       systemTheme.fore.$4) >
+  //       (8 * 128));
+  //   return isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  // }
 
   /// 获取Windows主题色
-  /*static int getWindowsTheme() {
-    final systemTheme = SystemTheme.getSystemTheme();
-    return Color.fromARGB(
-      systemTheme.accent.$1,
-      systemTheme.accent.$2,
-      systemTheme.accent.$3,
-      systemTheme.accent.$4,
-    ).value;
-  }*/
+  // static int getWindowsTheme() {
+  //   final systemTheme = SystemTheme.getSystemTheme();
+  //   return Color.fromARGB(
+  //     systemTheme.accent.$1,
+  //     systemTheme.accent.$2,
+  //     systemTheme.accent.$3,
+  //     systemTheme.accent.$4,
+  //   ).value;
+  // }
 
   AppSettings._();
 
@@ -103,87 +104,94 @@ class AppSettings {
   }
 
   static Future<void> readFromJson() async {
-    final supportPath = (await getApplicationSupportDirectory()).path;
-    final settingsPath = "$supportPath/settings.json";
+    try {
+      final supportPath = (await getAppDataDir()).path;
+      final settingsPath = "$supportPath/settings.json";
 
-    final settingsStr = File(settingsPath).readAsStringSync();
-    Map settingsMap = json.decode(settingsStr);
+      final settingsStr = File(settingsPath).readAsStringSync();
+      Map settingsMap = json.decode(settingsStr);
 
-    if (settingsMap["Version"] == null) {
-      return _readFromJson_old(settingsMap);
-    }
+      if (settingsMap["Version"] == null) {
+        return _readFromJson_old(settingsMap);
+      }
 
-    final ust = settingsMap["UseSystemTheme"];
-    if (ust != null) {
-      _instance.useSystemTheme = ust;
-    }
+      final ust = settingsMap["UseSystemTheme"];
+      if (ust != null) {
+        _instance.useSystemTheme = ust;
+      }
 
-    final ustm = settingsMap["UseSystemThemeMode"];
-    if (ustm != null) {
-      _instance.useSystemThemeMode = ustm;
-    }
+      final ustm = settingsMap["UseSystemThemeMode"];
+      if (ustm != null) {
+        _instance.useSystemThemeMode = ustm;
+      }
 
-    if (!_instance.useSystemTheme) {
-      _instance.defaultTheme = settingsMap["DefaultTheme"];
-    }
-    if (!_instance.useSystemThemeMode) {
-      _instance.themeMode = (settingsMap["ThemeMode"] ?? false)
-          ? ThemeMode.dark
-          : ThemeMode.light;
-    }
+      if (!_instance.useSystemTheme) {
+        _instance.defaultTheme = settingsMap["DefaultTheme"];
+      }
+      if (!_instance.useSystemThemeMode) {
+        _instance.themeMode = (settingsMap["ThemeMode"] ?? false)
+            ? ThemeMode.dark
+            : ThemeMode.light;
+      }
 
-    final dt = settingsMap["DynamicTheme"];
-    if (dt != null) {
-      _instance.dynamicTheme = dt;
-    }
+      final dt = settingsMap["DynamicTheme"];
+      if (dt != null) {
+        _instance.dynamicTheme = dt;
+      }
 
-    final _as = settingsMap["ArtistSeparator"];
-    if (_as != null) {
-      _instance.artistSeparator = _as;
+      final as = settingsMap["ArtistSeparator"];
+      if (as != null) {
+        _instance.artistSeparator = as;
       _instance.artistSplitPattern = _instance.artistSeparator.join("|");
     }
 
+      final llf = settingsMap["LocalLyricFirst"];
+      if (llf != null) {
+        _instance.localLyricFirst = llf;
+      }
 
-    final llf = settingsMap["LocalLyricFirst"];
-    if (llf != null) {
-      _instance.localLyricFirst = llf;
-    }
+      final sizeStr = settingsMap["WindowSize"];
+      if (sizeStr != null) {
+        final sizeStrs = (sizeStr as String).split(",");
+        _instance.windowSize = Size(double.tryParse(sizeStrs[0]) ?? 1280,
+            double.tryParse(sizeStrs[1]) ?? 756);
+      }
 
-    final sizeStr = settingsMap["WindowSize"];
-    if (sizeStr != null) {
-      final sizeStrs = (sizeStr as String).split(",");
-      _instance.windowSize = Size(double.tryParse(sizeStrs[0]) ?? 1280,
-          double.tryParse(sizeStrs[1]) ?? 756);
-    }
-
-    final ff = settingsMap["FontFamily"];
-    // final fp = settingsMap["FontPath"];
+      final ff = settingsMap["FontFamily"];
+      // final fp = settingsMap["FontPath"];
     if (ff != null) {
       _instance.fontFamily = ff;
-      // _instance.fontPath = fp;
+      // _instance.fontPath = fp;}
+    } catch (err, trace) {
+      LOGGER.e(err, stackTrace: trace);
     }
   }
 
   Future<void> saveSettings() async {
-    final currSize = await windowManager.getSize();
-    final settingsMap = {
-      "Version": version,
-      "ThemeMode": themeMode == ThemeMode.dark,
-      "DynamicTheme": dynamicTheme,
-      "UseSystemTheme": useSystemTheme,
-      "UseSystemThemeMode": useSystemThemeMode,
-      "DefaultTheme": defaultTheme,
-      "ArtistSeparator": artistSeparator,
-      "LocalLyricFirst": localLyricFirst,
-      "WindowSize":
-      "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
-      "FontFamily": fontFamily,
-      // "FontPath": fontPath,
+    try {
+      final currSize = await windowManager.getSize();
+      final settingsMap = {
+        "Version": version,
+        "ThemeMode": themeMode == ThemeMode.dark,
+        "DynamicTheme": dynamicTheme,
+        "UseSystemTheme": useSystemTheme,
+        "UseSystemThemeMode": useSystemThemeMode,
+        "DefaultTheme": defaultTheme,
+        "ArtistSeparator": artistSeparator,
+        "LocalLyricFirst": localLyricFirst,
+        "WindowSize":
+        "${currSize.width.toStringAsFixed(1)},${currSize.height.toStringAsFixed(1)}",
+        "FontFamily": fontFamily,
+        // "FontPath": fontPath,
     };
 
-    final settingsStr = json.encode(settingsMap);
-    final supportPath = (await getApplicationSupportDirectory()).path;
-    final settingsPath = "$supportPath/settings.json";
-    File(settingsPath).writeAsStringSync(settingsStr);
+      final settingsStr = json.encode(settingsMap);
+      final supportPath = (await getAppDataDir()).path;
+      final settingsPath = "$supportPath/settings.json";
+      final output = await File(settingsPath).create(recursive: true);
+      output.writeAsStringSync(settingsStr);
+    } catch (err, trace) {
+      LOGGER.e(err, stackTrace: trace);
+    }
   }
 }

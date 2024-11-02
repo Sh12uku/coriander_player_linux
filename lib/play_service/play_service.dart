@@ -15,7 +15,8 @@ class PlayService {
     return _instance!;
   }
 
-  // void close() {
-  //   desktopLyricService.killDesktopLyric();
-  // }
+  void close() {
+    // desktopLyricService.killDesktopLyric();
+    playbackService.close();
+  }
 }

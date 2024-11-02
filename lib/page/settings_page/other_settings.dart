@@ -88,6 +88,7 @@ class _AudioLibraryEditorDialogState extends State<AudioLibraryEditorDialog> {
     (i) => AudioLibrary.instance.folders[i].path,
   );
 
+  // final applicationSupportDirectory = getAppDataDir();
   final applicationSupportDirectory = getApplicationSupportDirectory();
 
   bool editing = true;
@@ -107,7 +108,6 @@ class _AudioLibraryEditorDialogState extends State<AudioLibraryEditorDialog> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -145,21 +145,26 @@ class _AudioLibraryEditorDialogState extends State<AudioLibraryEditorDialog> {
                           future: applicationSupportDirectory,
                           builder: (context, snapshot) {
                             if (snapshot.data == null) {
-                              return const SizedBox.shrink();
+                              return const Center(
+                                child: Text("Fail to get app data dir."),
+                              );
                             }
 
-                            return BuildIndexStateView(
-                              indexPath: snapshot.data!,
-                              folders: folders,
-                              whenIndexBuilt: () {
-                                Future.wait([
-                                  AudioLibrary.initFromIndex(),
-                                  readPlaylists(),
-                                  readLyricSources(),
-                                ]).whenComplete(() {
-                                  Navigator.pop(context);
-                                });
-                              },
+                            return Center(
+                              child: BuildIndexStateView(
+                                indexPath: snapshot.data!,
+                                folders: folders,
+                                whenIndexBuilt: () async {
+                                  await Future.wait([
+                                    AudioLibrary.initFromIndex(),
+                                    readPlaylists(),
+                                    readLyricSources(),
+                                  ]);
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                              ),
                             );
                           },
                         ),

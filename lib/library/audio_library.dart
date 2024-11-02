@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/src/rust/api/tag_reader.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:flutter/painting.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -13,14 +14,19 @@ class AudioLibrary {
   AudioLibrary._(this.folders);
 
   /// 所有音乐
-  late List<Audio> audioCollection;
+  List<Audio> audioCollection = [];
 
   Map<String, Artist> artistCollection = {};
 
   Map<String, Album> albumCollection = {};
 
   /// must call [initFromIndex]
-  static late AudioLibrary instance;
+  static AudioLibrary get instance {
+    _instance ?? AudioLibrary._([]);
+    return _instance!;
+  }
+
+  static AudioLibrary? _instance;
 
   /// 目前 index 结构：
   /// ```json
@@ -39,35 +45,38 @@ class AudioLibrary {
   /// }
   /// ```
   static Future<void> initFromIndex() async {
-    final supportPath = (await getApplicationSupportDirectory()).path;
-    final indexPath = "$supportPath/index.json";
+    try {
+      final supportPath = (await getAppDataDir()).path;
+      final indexPath = "$supportPath/index.json";
 
-    final indexStr = File(indexPath).readAsStringSync();
-    final Map indexJson = json.decode(indexStr);
-    final List foldersJson = indexJson["folders"];
-    final List<AudioFolder> folders = [];
+      final indexStr = File(indexPath).readAsStringSync();
+      final Map indexJson = json.decode(indexStr);
+      final List foldersJson = indexJson["folders"];
+      final List<AudioFolder> folders = [];
 
-    for (Map folderMap in foldersJson) {
-      final List audiosJson = folderMap["audios"];
-      final List<Audio> audios = [];
-      for (Map audioMap in audiosJson) {
-        audios.add(Audio.fromMap(audioMap));
+      for (Map folderMap in foldersJson) {
+        final List audiosJson = folderMap["audios"];
+        final List<Audio> audios = [];
+        for (Map audioMap in audiosJson) {
+          audios.add(Audio.fromMap(audioMap));
+        }
+        folders.add(AudioFolder.fromMap(folderMap, audios));
       }
-      folders.add(AudioFolder.fromMap(folderMap, audios));
+
+      _instance = AudioLibrary._(folders);
+
+      instance.artistCollection.clear();
+      instance.albumCollection.clear();
+      instance._buildCollections();
+    } catch (err, trace) {
+      LOGGER.e(err, stackTrace: trace);
     }
-
-    instance = AudioLibrary._(folders);
-
-    instance.artistCollection.clear();
-    instance.albumCollection.clear();
-    instance._buildCollections();
   }
 
   void _buildCollections() {
-    instance.audioCollection = folders.fold(
-      [],
-      (previousValue, element) => previousValue += element.audios,
-    );
+    for (var f in folders) {
+      audioCollection.addAll(f.audios);
+    }
 
     for (Audio audio in audioCollection) {
       for (String artistName in audio.splitedArtists) {
@@ -232,62 +241,48 @@ class Audio {
         "by": by
       };
 
+  /// 读取音乐文件的图片，自动适应缩放
+  Future<ImageProvider?> _getResizedPic({
+    required int width,
+    required int height,
+  }) async {
+    final ratio = PlatformDispatcher.instance.views.first.devicePixelRatio;
+    return getPictureFromPath(
+      path: path,
+      width: (width * ratio).round(),
+      height: (height * ratio).round(),
+    ).then((pic) {
+      if (pic == null) return null;
+
+      return MemoryImage(pic);
+    });
+  }
+
   /// 缓存ImageProvider而不是Uint8List（bytes）
   /// 缓存bytes时，每次加载图片都要重新解码，内存占用很大。快速滚动时能到700mb
   /// 缓存ImageProvider不用重新解码。快速滚动时最多250mb
   /// 48*48
   Future<ImageProvider?> get cover {
     if (_cover == null) {
-      return getPictureFromPath(path: path).then((value) {
-        if (value == null) {
-          return null;
-        }
+      return _getResizedPic(width: 48, height: 48).then((value) {
+        if (value == null) return null;
 
-        // _cover = ResizeImage.resizeIfNeeded(48, 48, MemoryImage(value));
-        _cover = ResizeImage(
-          MemoryImage(value),
-          width: 48,
-          height: 48,
-          policy: ResizeImagePolicy.fit,
-        );
+        _cover = value;
         return _cover;
       });
     }
-    return Future.value(_cover!);
+    return Future.value(_cover);
   }
 
   /// audio detail page 不需要频繁调用，所以不缓存图片
   /// 200 * 200
   Future<ImageProvider?> get mediumCover =>
-      getPictureFromPath(path: path).then((value) {
-        if (value == null) {
-          return null;
-        }
-        return ResizeImage(
-          MemoryImage(value),
-          width: 200,
-          height: 200,
-          policy: ResizeImagePolicy.fit,
-        );
-      });
+      _getResizedPic(width: 200, height: 200);
 
   /// now playing 不需要频繁调用，所以不缓存图片
   /// size: 400 * devicePixelRatio（屏幕缩放大小）
   Future<ImageProvider?> get largeCover =>
-      getPictureFromPath(path: path).then((value) {
-        if (value == null) {
-          return null;
-        }
-        final pixelRatio =
-            PlatformDispatcher.instance.views.first.devicePixelRatio;
-        final size = (400 * pixelRatio).round();
-        return ResizeImage(
-          MemoryImage(value),
-          width: size,
-          height: size,
-          policy: ResizeImagePolicy.fit,
-        );
-      });
+      _getResizedPic(width: 400, height: 400);
 
   @override
   String toString() {
@@ -315,12 +310,7 @@ class Artist {
   /// 只能用在artist detail page
   /// 200*200
   Future<ImageProvider?> get picture =>
-      getPictureFromPath(path: works.first.path).then((value) {
-        if (value == null) {
-          return null;
-        }
-        return ResizeImage.resizeIfNeeded(200, 200, MemoryImage(value));
-      });
+      works.first._getResizedPic(width: 200, height: 200);
 
   Artist({required this.name});
 }
@@ -337,12 +327,7 @@ class Album {
   /// 只能用在album detail page
   /// 200*200
   Future<ImageProvider?> get cover =>
-      getPictureFromPath(path: works.first.path).then((value) {
-        if (value == null) {
-          return null;
-        }
-        return ResizeImage.resizeIfNeeded(200, 200, MemoryImage(value));
-      });
+      works.first._getResizedPic(width: 200, height: 200);
 
   Album({required this.name});
 }

@@ -1,10 +1,12 @@
 import 'package:coriander_player/app_preference.dart';
+import 'package:coriander_player/utils.dart';
+import 'package:coriander_player/hotkeys_helper.dart';
 import 'package:coriander_player/page/uni_page.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/app_paths.dart' as app_paths;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class PlaylistsPage extends StatefulWidget {
   const PlaylistsPage({super.key});
@@ -49,8 +51,16 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
       subtitle: "${PLAYLISTS.length} 个歌单",
       contentList: PLAYLISTS,
       contentBuilder: (context, item, i, multiSelectController) => ListTile(
-        title: Text(PLAYLISTS[i].name),
-        subtitle: Text("${PLAYLISTS[i].audios.length}首乐曲"),
+        title: Text(
+          PLAYLISTS[i].name,
+          softWrap: false,
+          maxLines: 1,
+        ),
+        subtitle: Text(
+          "${PLAYLISTS[i].audios.length}首乐曲",
+          softWrap: false,
+          maxLines: 1,
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -97,10 +107,10 @@ class _PlaylistsPageState extends State<PlaylistsPage> {
           method: (list, order) {
             switch (order) {
               case SortOrder.ascending:
-                list.sort((a, b) => a.name.compareTo(b.name));
+                list.sort((a, b) => a.name.localeCompareTo(b.name));
                 break;
               case SortOrder.decending:
-                list.sort((a, b) => b.name.compareTo(a.name));
+                list.sort((a, b) => b.name.localeCompareTo(a.name));
                 break;
             }
           },
@@ -156,15 +166,18 @@ class _NewPlaylistDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              TextField(
-                autofocus: true,
-                controller: editingController,
-                onSubmitted: (value) {
-                  Navigator.pop(context, value);
-                },
-                decoration: const InputDecoration(
-                  labelText: "歌单名称",
-                  border: OutlineInputBorder(),
+              Focus(
+                onFocusChange: HotkeysHelper.onFocusChanges,
+                child: TextField(
+                  autofocus: true,
+                  controller: editingController,
+                  onSubmitted: (value) {
+                    Navigator.pop(context, value);
+                  },
+                  decoration: const InputDecoration(
+                    labelText: "歌单名称",
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
               const SizedBox(height: 16.0),
@@ -224,15 +237,18 @@ class _EditPlaylistDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              TextField(
-                autofocus: true,
-                controller: editingController,
-                onSubmitted: (value) {
-                  Navigator.pop(context, value);
-                },
-                decoration: const InputDecoration(
-                  labelText: "新歌单名称",
-                  border: OutlineInputBorder(),
+              Focus(
+                onFocusChange: HotkeysHelper.onFocusChanges,
+                child: TextField(
+                  autofocus: true,
+                  controller: editingController,
+                  onSubmitted: (value) {
+                    Navigator.pop(context, value);
+                  },
+                  decoration: const InputDecoration(
+                    labelText: "新歌单名称",
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
               const SizedBox(height: 16.0),

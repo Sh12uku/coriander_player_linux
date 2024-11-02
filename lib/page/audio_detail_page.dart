@@ -1,4 +1,4 @@
-import 'package:coriander_player/extensions.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/component/album_tile.dart';
 import 'package:coriander_player/component/artist_tile.dart';
@@ -34,10 +34,6 @@ class AudioDetailPage extends StatelessWidget {
 
     return Material(
       color: scheme.surface,
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(8.0),
-        bottomRight: Radius.circular(8.0),
-      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 96.0),
         child: Column(
@@ -50,19 +46,26 @@ class AudioDetailPage extends StatelessWidget {
               children: [
                 FutureBuilder(
                   future: audio.mediumCover,
-                  builder: (context, snapshot) {
-                    if (snapshot.data == null) {
-                      return placeholder;
-                    }
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Image(
-                        image: snapshot.data!,
+                  builder: (context, snapshot) =>
+                      switch (snapshot.connectionState) {
+                    ConnectionState.done => snapshot.data == null
+                        ? placeholder
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image(
+                              image: snapshot.data!,
+                              width: 200,
+                              height: 200,
+                              errorBuilder: (_, __, ___) => placeholder,
+                            ),
+                          ),
+                    _ => const SizedBox(
                         width: 200,
                         height: 200,
-                        errorBuilder: (_, __, ___) => placeholder,
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
                       ),
-                    );
                   },
                 ),
                 Text(audio.title, style: styleTitle),
@@ -119,13 +122,10 @@ class AudioDetailPage extends StatelessWidget {
                 Text("路径", style: styleTitle),
                 // TextButton(
                 //   onPressed: () async {
-                //     // final result = await showInExplorer(path: audio.path);
-                //     // final Uri path = Uri.parse(audio.path);
-                //     final Uri path = Uri.file(audio.path);
-                //     if(!await launchUrl(path) && context.mounted){
-                //       ScaffoldMessenger.of(context).showSnackBar(
-                //         const SnackBar(content: Text("打开失败")),
-                //       );
+                //     final result = await showInExplorer(path: audio.path);
+                //
+                //     if (!result && context.mounted) {
+                //       showTextOnSnackBar("打开失败");
                 //     }
                 //   },
                 //   child: const Text("在文件资源管理器中显示"),
@@ -147,14 +147,14 @@ class AudioDetailPage extends StatelessWidget {
             ),
 
             /// created
-            /*_AudioDetailTile(
-              title: "创建时间",
-              detail: Text(
-                DateTime.fromMillisecondsSinceEpoch(
-                  audio.created * 1000,
-                ).toString(),
-              ),
-            ),*/
+            // _AudioDetailTile(
+            //   title: "创建时间",
+            //   detail: Text(
+            //     DateTime.fromMillisecondsSinceEpoch(
+            //       audio.created * 1000,
+            //     ).toString(),
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -164,7 +164,6 @@ class AudioDetailPage extends StatelessWidget {
 
 class _AudioDetailTile extends StatelessWidget {
   const _AudioDetailTile({
-    super.key,
     required this.title,
     required this.detail,
   });

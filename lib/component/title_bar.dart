@@ -4,12 +4,13 @@ import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/app_settings.dart';
 import 'package:coriander_player/component/horizontal_lyric_view.dart';
 import 'package:coriander_player/component/responsive_builder.dart';
+import 'package:coriander_player/hotkeys_helper.dart';
 import 'package:coriander_player/library/playlist.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
 import 'package:coriander_player/play_service/play_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TitleBar extends StatelessWidget {
@@ -224,10 +225,39 @@ class _WindowControllsState extends State<WindowControlls> with WindowListener {
   }
 
   @override
+  void onWindowEnterFullScreen() {
+    super.onWindowEnterFullScreen();
+    setState(() {});
+  }
+
+  @override
+  void onWindowLeaveFullScreen() {
+    super.onWindowLeaveFullScreen();
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8.0,
       children: [
+        FutureBuilder(
+          future: windowManager.isFullScreen(),
+          builder: (context, snapshot) {
+            final isFullScreen = snapshot.data ?? true;
+            return IconButton(
+              tooltip: isFullScreen ? "退出全屏" : "全屏",
+              onPressed: () async {
+                await windowManager.hide();
+                await windowManager.setFullScreen(!isFullScreen);
+                await windowManager.show();
+              },
+              icon: Icon(
+                isFullScreen ? Symbols.close_fullscreen : Symbols.open_in_full,
+              ),
+            );
+          },
+        ),
         IconButton(
           tooltip: "最小化",
           onPressed: windowManager.minimize,
@@ -236,7 +266,7 @@ class _WindowControllsState extends State<WindowControlls> with WindowListener {
         FutureBuilder(
           future: windowManager.isMaximized(),
           builder: (context, snapshot) {
-            final isMaximized = snapshot.data ?? false;
+            final isMaximized = snapshot.data ?? true;
             return IconButton(
               tooltip: isMaximized ? "还原" : "最大化",
               onPressed: isMaximized
@@ -251,11 +281,14 @@ class _WindowControllsState extends State<WindowControlls> with WindowListener {
         IconButton(
           tooltip: "退出",
           onPressed: () async {
+            // PlayService.instance.close();
+
             await savePlaylists();
             await saveLyricSources();
             await AppSettings.instance.saveSettings();
             await AppPreference.instance.save();
-            // PlayService.instance.close();
+
+            await HotkeysHelper.unregisterAll();
             windowManager.close();
           },
           icon: const Icon(Symbols.close),

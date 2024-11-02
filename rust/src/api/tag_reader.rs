@@ -1,11 +1,12 @@
 use std::{
     collections::HashSet,
     fs::{self},
-    io::{self, Write},
+    io::{self, Cursor, Write},
     path::{Path, PathBuf},
     time::{Duration, UNIX_EPOCH},
 };
 
+use image::imageops;
 use lofty::prelude::{Accessor, AudioFile, ItemKey, TaggedFileExt};
 // use windows::{
 //     core::Interface,
@@ -18,6 +19,8 @@ use lofty::prelude::{Accessor, AudioFile, ItemKey, TaggedFileExt};
 // };
 
 use crate::frb_generated::StreamSink;
+
+use super::logger::log_to_dart;
 
 const UNKNOWN_COW: std::borrow::Cow<'_, str> = std::borrow::Cow::Borrowed("UNKNOWN");
 const UNKNOWN_STR: &str = "UNKNOWN";
@@ -115,9 +118,16 @@ impl Audio {
     /// 再不能的话：title: filename 代替
     fn read_from_path(path: impl AsRef<Path>) -> Option<Self> {
         let path = path.as_ref();
-        let lofty_support: bool = *SUPPORT_FORMAT.get(&path.extension()?.to_string_lossy())?;
+        let lofty_support: bool =
+            *SUPPORT_FORMAT.get(&path.extension()?.to_ascii_lowercase().to_string_lossy())?;
 
-        let file_metadata = fs::metadata(path).unwrap();
+        let file_metadata = match fs::metadata(path) {
+            Ok(val) => val,
+            Err(err) => {
+                log_to_dart(err.to_string());
+                return None;
+            }
+        };
         let modified = file_metadata
             .modified()
             .unwrap_or(UNIX_EPOCH)
@@ -140,12 +150,18 @@ impl Audio {
 
             // match Self::read_by_win_music_properties(path, modified, created) {
             //     Ok(value) => Some(value),
-            //     Err(_) => Self::new_with_path(path, None),
-            // }
+            //     Err(err) => {
+            //         log_to_dart(format!("{:?}: {}", path, err));
+            //         return Self::new_with_path(path, None);
+            //    }
+            }
         } else {
             // match Self::read_by_win_music_properties(path, modified, created) {
             //     Ok(value) => Some(value),
-            //     Err(_) => Self::new_with_path(path, None),
+            //     Err(err) => {
+            //         log_to_dart(format!("{:?}: {}", path, err));
+            //         return Self::new_with_path(path, None);
+            //     }
             // }
             return Self::new_with_path(path, None);
         }
@@ -154,33 +170,28 @@ impl Audio {
     /// 使用 lofty 获取音乐标签。只在文件名不正确、没有标签或包含不支持的编码时返回 None
     fn read_by_lofty(path: impl AsRef<Path>, modified: u64, created: u64) -> Option<Self> {
         let path = path.as_ref();
-        if let Ok(tagged_file) = lofty::read_from_path(path) {
-            let properties = tagged_file.properties();
-
-            if let Some(tag) = tagged_file.primary_tag().or(tagged_file.first_tag()) {
-                return Some(Audio {
-                    title: tag
-                        .title()
-                        .unwrap_or(path.file_name()?.to_string_lossy())
-                        .to_string(),
-                    artist: tag.artist().unwrap_or(UNKNOWN_COW).to_string(),
-                    album: tag.album().unwrap_or(UNKNOWN_COW).to_string(),
-                    track: tag.track(),
-                    duration: properties.duration().as_secs(),
-                    bitrate: properties.audio_bitrate(),
-                    sample_rate: properties.sample_rate(),
-                    path: path.to_string_lossy().to_string(),
-                    modified,
-                    created,
-                    by: Some("Lofty".to_string()),
-                });
+        let tagged_file = match lofty::read_from_path(path) {
+            Ok(val) => val,
+            Err(err) => {
+                log_to_dart(format!("{:?}: {}", path, err));
+                return None;
             }
+        };
 
+        let properties = tagged_file.properties();
+
+        if let Some(tag) = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag())
+        {
             return Some(Audio {
-                title: path.file_name()?.to_string_lossy().to_string(),
-                artist: UNKNOWN_COW.to_string(),
-                album: UNKNOWN_COW.to_string(),
-                track: None,
+                title: tag
+                    .title()
+                    .unwrap_or(path.file_name()?.to_string_lossy())
+                    .to_string(),
+                artist: tag.artist().unwrap_or(UNKNOWN_COW).to_string(),
+                album: tag.album().unwrap_or(UNKNOWN_COW).to_string(),
+                track: tag.track(),
                 duration: properties.duration().as_secs(),
                 bitrate: properties.audio_bitrate(),
                 sample_rate: properties.sample_rate(),
@@ -191,7 +202,19 @@ impl Audio {
             });
         }
 
-        None
+        return Some(Audio {
+            title: path.file_name()?.to_string_lossy().to_string(),
+            artist: UNKNOWN_COW.to_string(),
+            album: UNKNOWN_COW.to_string(),
+            track: None,
+            duration: properties.duration().as_secs(),
+            bitrate: properties.audio_bitrate(),
+            sample_rate: properties.sample_rate(),
+            path: path.to_string_lossy().to_string(),
+            modified,
+            created,
+            by: Some("Lofty".to_string()),
+        });
     }
 
     // /// 使用 Windows Api 获取音乐标签。会因为各种原因返回 Err
@@ -211,7 +234,7 @@ impl Audio {
 
     //     let mut title = music_properties
     //         .Title()
-    //         .or(storage_file.Name())?
+    //         .or_else(|_| storage_file.Name())?
     //         .to_string();
     //     if title.is_empty() {
     //         title = storage_file.Name()?.to_string();
@@ -277,36 +300,51 @@ impl AudioFolder {
     /// 扫描路径为 path 的文件夹
     fn read_from_folder(path: impl AsRef<Path>) -> Result<AudioFolder, io::Error> {
         let path = path.as_ref();
-        if let Ok(dir) = fs::read_dir(path) {
-            let mut audios: Vec<Audio> = vec![];
-            let mut latest: u64 = 0;
 
-            for item in dir {
-                let entry = item?;
+        let dir = match fs::read_dir(path) {
+            Ok(val) => val,
+            Err(err) => {
+                log_to_dart(format!("{:?}: {}", path, err));
+                return Err(err);
+            }
+        };
 
-                if entry.file_type()?.is_dir() {
-                    continue;
-                } else if let Some(metadata) = Audio::read_from_path(entry.path()) {
-                    if metadata.created > latest {
-                        latest = metadata.created;
+        let mut audios: Vec<Audio> = vec![];
+        let mut latest: u64 = 0;
+
+        for item in dir {
+            let entry = match item {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+
+            let file_type = match entry.file_type() {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+
+            if file_type.is_file() {
+                if let Some(audio_item) = Audio::read_from_path(entry.path()) {
+                    if audio_item.created > latest {
+                        latest = audio_item.created;
                     }
 
-                    audios.push(metadata);
+                    audios.push(audio_item);
                 }
             }
+        }
 
-            if !audios.is_empty() {
-                return Ok(AudioFolder {
-                    path: path.to_string_lossy().to_string(),
-                    modified: fs::metadata(path)?
-                        .modified()?
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or(Duration::ZERO)
-                        .as_secs(),
-                    latest,
-                    audios,
-                });
-            }
+        if !audios.is_empty() {
+            return Ok(AudioFolder {
+                path: path.to_string_lossy().to_string(),
+                modified: fs::metadata(path)?
+                    .modified()?
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or(Duration::ZERO)
+                    .as_secs(),
+                latest,
+                audios,
+            });
         }
 
         Err(io::Error::new(
@@ -329,65 +367,86 @@ impl AudioFolder {
             return Ok(());
         }
 
-        if let Ok(dir) = fs::read_dir(folder) {
-            sink.add(IndexActionState {
-                progress: *scaned_count as f64 / *total_count as f64,
-                message: String::from("正在扫描 ") + &folder.to_string_lossy(),
-            })
-            .unwrap(); // TODO: map_err???
+        let dir = match fs::read_dir(folder) {
+            Ok(val) => val,
+            Err(err) => {
+                log_to_dart(format!("{:?}: {}", folder, err));
+                return Ok(());
+            }
+        };
 
-            scaned_folders.insert(folder.to_string_lossy().to_string());
-            let mut audios: Vec<Audio> = vec![];
-            let mut latest: u64 = 0;
+        let _ = sink.add(IndexActionState {
+            progress: *scaned_count as f64 / *total_count as f64,
+            message: String::from("正在扫描 ") + &folder.to_string_lossy(),
+        });
 
-            for item in dir {
-                let entry = item?;
+        scaned_folders.insert(folder.to_string_lossy().to_string());
+        let mut audios: Vec<Audio> = vec![];
+        let mut latest: u64 = 0;
 
-                if entry.file_type()?.is_dir() {
-                    *total_count += 1;
-                    Self::read_from_folder_recursively(
-                        entry.path(),
-                        result,
-                        scaned_count,
-                        total_count,
-                        scaned_folders,
-                        sink,
-                    )?;
-                } else if let Some(metadata) = Audio::read_from_path(entry.path()) {
-                    if metadata.created > latest {
-                        latest = metadata.created;
-                    }
+        for item in dir {
+            let entry = match item {
+                Ok(value) => value,
+                Err(err) => {
+                    log_to_dart(err.to_string());
+                    continue;
+                }
+            };
 
-                    audios.push(metadata);
+            let file_type = match entry.file_type() {
+                Ok(value) => value,
+                Err(err) => {
+                    log_to_dart(err.to_string());
+                    continue;
+                }
+            };
+
+            if file_type.is_dir() {
+                *total_count += 1;
+                let _ = Self::read_from_folder_recursively(
+                    entry.path(),
+                    result,
+                    scaned_count,
+                    total_count,
+                    scaned_folders,
+                    sink,
+                );
+            } else if let Some(metadata) = Audio::read_from_path(entry.path()) {
+                if metadata.created > latest {
+                    latest = metadata.created;
+                }
+
+                audios.push(metadata);
+            }
+        }
+
+        if !audios.is_empty() {
+            if let Ok(metadata) = fs::metadata(folder) {
+                if let Ok(modified) = metadata.modified() {
+                    result.push(AudioFolder {
+                        path: folder.to_string_lossy().to_string(),
+                        modified: modified
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or(Duration::ZERO)
+                            .as_secs(),
+                        latest,
+                        audios,
+                    });
                 }
             }
-
-            if !audios.is_empty() {
-                result.push(AudioFolder {
-                    path: folder.to_string_lossy().to_string(),
-                    modified: fs::metadata(folder)?
-                        .modified()?
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or(Duration::ZERO)
-                        .as_secs(),
-                    latest,
-                    audios,
-                });
-            }
-
-            *scaned_count += 1;
-            sink.add(IndexActionState {
-                progress: *scaned_count as f64 / *total_count as f64,
-                message: String::new(),
-            })
-            .unwrap();
         }
+
+        *scaned_count += 1;
+        let _ = sink.add(IndexActionState {
+            progress: *scaned_count as f64 / *total_count as f64,
+            message: String::new(),
+        });
 
         Ok(())
     }
 }
 
-// fn _get_picture_by_windows(path: String) -> Result<Vec<u8>, windows::core::Error> {
+// fn _get_picture_by_windows(path: &String) -> Result<Vec<u8>, windows::core::Error> {
 //     let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path))?.get()?;
 //     let thumbnail = file
 //         .GetThumbnailAsyncOverloadDefaultSizeDefaultOptions(ThumbnailMode::MusicView)?
@@ -407,98 +466,111 @@ impl AudioFolder {
 //     Ok(buffer)
 // }
 
-/// for Flutter  
-/// 如果无法通过 Lofty 获取则通过 Windows 获取
-pub fn get_picture_from_path(path: String) -> Option<Vec<u8>> {
+fn _get_picture_by_lofty(path: &String) -> Option<Vec<u8>> {
     if let Ok(tagged_file) = lofty::read_from_path(&path) {
-        let tag = tagged_file.primary_tag().or(tagged_file.first_tag())?;
+        let tag = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag())?;
+
         return Some(tag.pictures().first()?.data().to_vec());
     }
 
-    // if let Ok(pic) = _get_picture_by_windows(path) {
-    //     return Some(pic);
-    // }
-
     None
 }
 
-/// for Flutter   
-/// 只支持读取 ID3V2, VorbisComment, Mp4Ilst 存储的内嵌歌词
-/// 以及相同目录相同文件名的 .lrc 外挂歌词（utf-8 or utf-16）
-pub fn get_lyric_from_path(path: String) -> Option<String> {
-    if let Ok(tagged_file) = lofty::read_from_path(&path) {
-        if let Some(tag) = tagged_file.primary_tag().or(tagged_file.first_tag()) {
-            if let Some(lyric_tag) = tag.get(&ItemKey::Lyrics) {
-                if let Some(lyric) = lyric_tag.value().text() {
-                    return Some(lyric.to_string());
-                }
+/// for Flutter
+/// 如果无法通过 Lofty 获取则通过 Windows 获取
+pub fn get_picture_from_path(path: String, width: u32, height: u32) -> Option<Vec<u8>> {
+    let pic_option =
+        _get_picture_by_lofty(&path).or_else(|| match _get_picture_by_windows(&path) {
+            Ok(val) => Some(val),
+            Err(err) => {
+                log_to_dart(format!("fail to get pic: {}", err));
+                None
+            }
+        });
+
+    if let Some(pic) = &pic_option {
+        if let Ok(loaded_pic) = image::load_from_memory(pic) {
+            // 计算新的宽高，保持原比例
+            let pic_ratio = loaded_pic.width() as f32 / loaded_pic.height() as f32;
+
+            let (result_width, result_height) = if pic_ratio > 1.0 {
+                (width, (width as f32 / pic_ratio).round() as u32)
+            } else {
+                ((height as f32 * pic_ratio).round() as u32, height)
+            };
+
+            let resized_img = imageops::resize(
+                &loaded_pic,
+                result_width,
+                result_height,
+                imageops::FilterType::Triangle,
+            );
+
+            let mut output = Cursor::new(Vec::new());
+            if let Ok(_) = resized_img.write_to(&mut output, image::ImageFormat::Png) {
+                return Some(output.into_inner());
             }
         }
     }
 
+    pic_option
+}
+
+fn _get_lyric_from_lofty(path: &String) -> Option<String> {
+    if let Ok(tagged_file) = lofty::read_from_path(&path) {
+        let tag = tagged_file
+            .primary_tag()
+            .or_else(|| tagged_file.first_tag())?;
+        let lyric_tag = tag.get(&ItemKey::Lyrics)?;
+        let lyric = lyric_tag.value().text()?;
+
+        return Some(lyric.to_string());
+    }
+
+    None
+}
+
+fn _get_lyric_from_lrc_file(path: &String) -> anyhow::Result<String> {
     let mut lrc_file_path = PathBuf::from(path);
     lrc_file_path.set_extension("lrc");
 
-    if let Ok(lrc_bytes) = fs::read(lrc_file_path) {
-        let is_le = lrc_bytes.starts_with(&[0xFF, 0xFE]);
-        let is_utf16 = (is_le || lrc_bytes.starts_with(&[0xFE, 0xFF])) && lrc_bytes.len() % 2 == 0;
+    let lrc_bytes = fs::read(lrc_file_path)?;
 
-        if is_utf16 {
-            let convert_fn = match is_le {
-                true => u16::from_le_bytes,
-                false => u16::from_be_bytes,
-            };
+    let is_le = lrc_bytes.starts_with(&[0xFF, 0xFE]);
+    let is_utf16 = (is_le || lrc_bytes.starts_with(&[0xFE, 0xFF])) && lrc_bytes.len() % 2 == 0;
 
-            let mut u16_bytes: Vec<u16> = vec![];
-            let mut chunk_iter = lrc_bytes.chunks_exact(2);
-            chunk_iter.next();
+    if is_utf16 {
+        let convert_fn = match is_le {
+            true => u16::from_le_bytes,
+            false => u16::from_be_bytes,
+        };
 
-            for chunk in chunk_iter {
-                u16_bytes.push(convert_fn([chunk[0], chunk[1]]));
-            }
-            if let Ok(lrc_str) = String::from_utf16(&u16_bytes) {
-                return Some(lrc_str);
-            }
-        } else if let Ok(lrc_str) = String::from_utf8(lrc_bytes.clone()) {
-            return Some(lrc_str);
+        let mut u16_bytes: Vec<u16> = vec![];
+        let mut chunk_iter = lrc_bytes.chunks_exact(2);
+        chunk_iter.next();
+
+        for chunk in chunk_iter {
+            u16_bytes.push(convert_fn([chunk[0], chunk[1]]));
         }
+        return Ok(String::from_utf16(&u16_bytes)?);
     }
 
-    None
+    return Ok(String::from_utf8(lrc_bytes)?);
 }
 
-/// for Flutter  
-/// 扫描给定的所有文件夹的音乐文件并把索引保存在 index_path/index.json。
-pub fn build_index_from_folders(
-    folders: Vec<String>,
-    index_path: String,
-    sink: StreamSink<IndexActionState>,
-) -> Result<(), io::Error> {
-    let mut audio_folders_json: Vec<serde_json::Value> = vec![];
-    for item in &folders {
-        sink.add(IndexActionState {
-            progress: audio_folders_json.len() as f64 / folders.len() as f64,
-            message: String::from("正在扫描 ") + item,
-        })
-        .unwrap();
-        let folder_path = Path::new(item);
-        audio_folders_json.push(AudioFolder::read_from_folder(folder_path)?.to_json_value());
-        sink.add(IndexActionState {
-            progress: audio_folders_json.len() as f64 / folders.len() as f64,
-            message: String::new(),
-        })
-        .unwrap();
-    }
-    fs::File::create(index_path)?.write_all(
-        serde_json::json!({
-            "version": LOWEST_VERSION,
-            "folders": audio_folders_json,
-        })
-        .to_string()
-        .as_bytes(),
-    )?;
-
-    Ok(())
+/// for Flutter
+/// 只支持读取 ID3V2, VorbisComment, Mp4Ilst 存储的内嵌歌词
+/// 以及相同目录相同文件名的 .lrc 外挂歌词（utf-8 or utf-16）
+pub fn get_lyric_from_path(path: String) -> Option<String> {
+    return _get_lyric_from_lofty(&path).or_else(|| match _get_lyric_from_lrc_file(&path) {
+        Ok(val) => Some(val),
+        Err(err) => {
+            log_to_dart(format!("fail to get lrc: {}", err.to_string()));
+            None
+        }
+    });
 }
 
 /// for Flutter  
@@ -514,14 +586,14 @@ pub fn build_index_from_folders_recursively(
     let mut scaned_folders: HashSet<String> = HashSet::new();
 
     for item in &folders {
-        AudioFolder::read_from_folder_recursively(
+        let _ = AudioFolder::read_from_folder_recursively(
             Path::new(item),
             &mut audio_folders,
             &mut scaned,
             &mut total,
             &mut scaned_folders,
             &sink,
-        )?;
+        );
     }
 
     let mut audio_folders_json: Vec<serde_json::Value> = vec![];
@@ -549,18 +621,18 @@ fn _update_index_below_1_1_0(
     let folders = index.as_array().unwrap();
     for item in folders {
         let path = item["path"].as_str().unwrap();
-        sink.add(IndexActionState {
+        let _ = sink.add(IndexActionState {
             progress: audio_folders_json.len() as f64 / folders.len() as f64,
             message: String::from("正在扫描 ") + path,
-        })
-        .unwrap();
+        });
         let folder_path = Path::new(path);
-        audio_folders_json.push(AudioFolder::read_from_folder(folder_path)?.to_json_value());
-        sink.add(IndexActionState {
-            progress: audio_folders_json.len() as f64 / folders.len() as f64,
-            message: String::new(),
-        })
-        .unwrap();
+        if let Ok(audio_folder) = AudioFolder::read_from_folder(folder_path) {
+            audio_folders_json.push(audio_folder.to_json_value());
+            let _ = sink.add(IndexActionState {
+                progress: audio_folders_json.len() as f64 / folders.len() as f64,
+                message: String::new(),
+            });
+        }
     }
     fs::File::create(index_path)?.write_all(
         serde_json::json!({
@@ -587,18 +659,15 @@ fn _update_index_below_1_1_0(
 /// 1. 遍历该文件夹索引，判断文件是否存在，不存在则删除记录
 /// 2. 遍历该文件夹索引，如果文件被修改（再次读取到的 modified > 记录的 modified），重新读取标签；没有则跳过它
 /// 3. 遍历该文件夹，添加新增（读取到的 created > 记录的 latest）的音乐文件
-pub fn update_index(
-    index_path: String,
-    sink: StreamSink<IndexActionState>,
-) -> Result<(), io::Error> {
+pub fn update_index(index_path: String, sink: StreamSink<IndexActionState>) -> anyhow::Result<()> {
     let mut index_path = PathBuf::from(index_path);
     index_path.push("index.json");
     let index = fs::read(&index_path)?;
-    let mut index: serde_json::Value = serde_json::from_slice(&index).unwrap();
+    let mut index: serde_json::Value = serde_json::from_slice(&index)?;
 
     let version = index["version"].as_u64();
     if version.is_none() {
-        return _update_index_below_1_1_0(&index, &index_path, &sink);
+        return Ok(_update_index_below_1_1_0(&index, &index_path, &sink)?);
     }
 
     let folders = index["folders"].as_array_mut().unwrap();
@@ -617,22 +686,27 @@ pub fn update_index(
         let latest = folder_item["latest"].as_u64().unwrap();
         let old_folder_modified = folder_item["modified"].as_u64().unwrap();
 
-        let new_folder_modified = fs::metadata(&folder_path)?
-            .modified()?
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::ZERO)
-            .as_secs();
+        let new_folder_modified = match fs::metadata(&folder_path) {
+            Ok(value) => match value.modified() {
+                Ok(value) => value
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or(Duration::ZERO)
+                    .as_secs(),
+                Err(_) => continue,
+            },
+            Err(_) => continue,
+        };
+
         // 跳过没有被修改的文件夹
         if new_folder_modified <= old_folder_modified {
             updated += 1;
             continue;
         }
 
-        sink.add(IndexActionState {
+        let _ = sink.add(IndexActionState {
             progress: updated as f64 / total as f64,
             message: String::from("正在更新 ") + &folder_path,
-        })
-        .unwrap();
+        });
 
         folder_item["modified"] = serde_json::json!(new_folder_modified);
 
@@ -647,11 +721,16 @@ pub fn update_index(
         for audio_item in &mut *audios {
             let old_audio_modified = audio_item["modified"].as_u64().unwrap();
             let audio_path = audio_item["path"].as_str().unwrap();
-            let new_audio_modified = fs::metadata(audio_path)?
-                .modified()?
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or(Duration::ZERO)
-                .as_secs();
+            let new_audio_modified = match fs::metadata(&audio_path) {
+                Ok(value) => match value.modified() {
+                    Ok(value) => value
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or(Duration::ZERO)
+                        .as_secs(),
+                    Err(_) => continue,
+                },
+                Err(_) => continue,
+            };
             // 跳过没有被修改的文件
             if new_audio_modified <= old_audio_modified {
                 continue;
@@ -665,19 +744,33 @@ pub fn update_index(
 
         // 添加新增的音乐文件
         let mut new_latest: u64 = latest;
-        let dir = fs::read_dir(folder_path)?;
+        let dir = match fs::read_dir(folder_path) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
         for entry in dir {
-            let entry = entry?;
-            if entry.file_type()?.is_dir() {
+            let entry = match entry {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+            let file_type = match entry.file_type() {
+                Ok(value) => value,
+                Err(_) => continue,
+            };
+            if file_type.is_dir() {
                 continue;
             }
 
-            let entry_created = entry
-                .metadata()?
-                .created()?
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or(Duration::ZERO)
-                .as_secs();
+            let entry_created = match entry.metadata() {
+                Ok(value) => match value.created() {
+                    Ok(value) => value
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or(Duration::ZERO)
+                        .as_secs(),
+                    Err(_) => continue,
+                },
+                Err(_) => continue,
+            };
             if entry_created > latest {
                 if let Some(new_audio) = Audio::read_from_path(entry.path()) {
                     if entry_created > new_latest {
@@ -692,11 +785,10 @@ pub fn update_index(
         folder_item["latest"] = serde_json::json!(new_latest);
 
         updated += 1;
-        sink.add(IndexActionState {
+        let _ = sink.add(IndexActionState {
             progress: updated as f64 / total as f64,
             message: String::new(),
-        })
-        .unwrap();
+        });
     }
 
     fs::File::create(index_path)?.write_all(index.to_string().as_bytes())?;

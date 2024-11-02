@@ -6,7 +6,6 @@ import 'package:coriander_player/app_paths.dart' as app_paths;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -61,7 +60,7 @@ class FolderSelectorView extends StatefulWidget {
 class _FolderSelectorViewState extends State<FolderSelectorView> {
   bool selecting = true;
   final List<String> folders = [];
-  final applicationSupportDirectory = getApplicationSupportDirectory();
+  final applicationSupportDirectory = getAppDataDir();
 
   @override
   Widget build(BuildContext context) {
@@ -77,18 +76,23 @@ class _FolderSelectorViewState extends State<FolderSelectorView> {
             : FutureBuilder(
                 future: applicationSupportDirectory,
                 builder: (context, snapshot) {
-                  if (snapshot.data == null) return const SizedBox.shrink();
+                  if (snapshot.data == null) {
+                    return const Center(
+                      child: Text("Fail to get app data dir."),
+                    );
+                  }
 
                   return BuildIndexStateView(
                     indexPath: snapshot.data!,
                     folders: folders,
-                    whenIndexBuilt: () {
-                      Future.wait([
+                    whenIndexBuilt: () async {
+                      await Future.wait([
                         AppSettings.instance.saveSettings(),
                         AudioLibrary.initFromIndex(),
-                      ]).whenComplete(() {
+                      ]);
+                      if (context.mounted) {
                         context.go(app_paths.AUDIOS_PAGE);
-                      });
+                      }
                     },
                   );
                 },
@@ -192,13 +196,14 @@ class _TitleBar extends StatelessWidget {
 }
 
 class _WindowControlls extends StatefulWidget {
-  const _WindowControlls({super.key});
+  const _WindowControlls();
 
   @override
   State<_WindowControlls> createState() => __WindowControllsState();
 }
 
-class __WindowControllsState extends State<_WindowControlls> with WindowListener {
+class __WindowControllsState extends State<_WindowControlls>
+    with WindowListener {
   @override
   void initState() {
     super.initState();

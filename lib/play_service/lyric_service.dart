@@ -6,7 +6,7 @@ import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/lyric/lrc.dart';
 import 'package:coriander_player/lyric/lyric.dart';
 import 'package:coriander_player/lyric/lyric_source.dart';
-import 'package:coriander_player/search_helper.dart';
+import 'package:coriander_player/music_matcher.dart';
 import 'package:coriander_player/play_service/play_service.dart';
 // import 'package:desktop_lyric/message.dart';
 import 'package:flutter/foundation.dart';
@@ -28,28 +28,13 @@ class LyricService extends ChangeNotifier {
 
           final currLineIndex = _nextLyricLine - 1;
           _lyricLineStreamController.add(currLineIndex);
-          /*
-          playService.desktopLyricService.canSendMessage.then((canSend) {
-            if (!canSend) return;
 
-            final currLine = value.lines[currLineIndex];
-            if (currLine is SyncLyricLine) {
-              playService.desktopLyricService.sendMessage(LyricLineMessage(
-                content: currLine.content,
-                length: currLine.length,
-                translation: currLine.translation,
-              ));
-            } else if (currLine is LrcLine) {
-              final splitted = currLine.content.split("┃");
-              final content = splitted.first;
-              final translation = splitted.length > 1 ? splitted[1] : null;
-              playService.desktopLyricService.sendMessage(LyricLineMessage(
-                content: content,
-                length: currLine.length,
-                translation: translation,
-              ));
-            }
-          });*/
+          // playService.desktopLyricService.canSendMessage.then((canSend) {
+          //   if (!canSend) return;
+          //
+          //   final currLine = value.lines[currLineIndex];
+          //   playService.desktopLyricService.sendLyricLineMessage(currLine);
+          // });
         }
       });
     });

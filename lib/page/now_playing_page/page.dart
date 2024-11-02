@@ -1,8 +1,10 @@
 // ignore_for_file: camel_case_types
 
+import 'dart:ui';
+
 import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/component/title_bar.dart';
-import 'package:coriander_player/extensions.dart';
+import 'package:coriander_player/utils.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/component/responsive_builder.dart';
 import 'package:coriander_player/page/now_playing_page/component/current_playlist_view.dart';
@@ -16,12 +18,11 @@ import 'package:coriander_player/play_service/playback_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'small_page.dart';
-
 part 'large_page.dart';
 
 enum NowPlayingViewMode {
@@ -49,11 +50,37 @@ class NowPlayingPage extends StatefulWidget {
 }
 
 class _NowPlayingPageState extends State<NowPlayingPage> {
+  final playbackService = PlayService.instance.playbackService;
+  ImageProvider<Object>? nowPlayingCover;
+
+  void updateCover() {
+    playbackService.nowPlaying?.cover.then((cover) {
+      if (mounted) {
+        setState(() {
+          nowPlayingCover = cover;
+        });
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    playbackService.addListener(updateCover);
+    updateCover();
+  }
+
+  @override
+  void dispose() {
+    playbackService.removeListener(updateCover);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final theme = Theme.of(context);
+    final brightness = theme.brightness;
+    final scheme = theme.colorScheme;
 
     return Scaffold(
       appBar: const PreferredSize(
@@ -70,34 +97,76 @@ class _NowPlayingPageState extends State<NowPlayingPage> {
         ),
       ),
       backgroundColor: scheme.secondaryContainer,
-      body: ChangeNotifierProvider.value(
-        value: PlayService.instance.playbackService,
-        builder: (context, _) {
-          return ResponsiveBuilder2(builder: (context, screenType) {
-            switch (screenType) {
-              case ScreenType.small:
-                return const _NowPlayingPage_Small();
-              case ScreenType.medium:
-              case ScreenType.large:
-                return const _NowPlayingPage_Large();
-            }
-          });
-        },
+      body: Stack(
+        fit: StackFit.expand,
+        alignment: AlignmentDirectional.center,
+        children: [
+          if (nowPlayingCover != null) ...[
+            Image(
+              image: nowPlayingCover!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+            switch (brightness) {
+              Brightness.dark => const ColoredBox(color: Colors.black45),
+              Brightness.light => const ColoredBox(color: Colors.white54),
+            },
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 250, sigmaY: 250),
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ],
+          ChangeNotifierProvider.value(
+            value: PlayService.instance.playbackService,
+            builder: (context, _) {
+              return ResponsiveBuilder2(builder: (context, screenType) {
+                switch (screenType) {
+                  case ScreenType.small:
+                    return const _NowPlayingPage_Small();
+                  case ScreenType.medium:
+                  case ScreenType.large:
+                    return const _NowPlayingPage_Large();
+                }
+              });
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
+// class _ExclusiveModeSwitch extends StatelessWidget {
+//   const _ExclusiveModeSwitch();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return ValueListenableBuilder(
+//       valueListenable: PlayService.instance.playbackService.wasapiExclusive,
+//       builder: (context, exclusive, _) => IconButton(
+//         tooltip: "独占模式；现在：${exclusive ? "启用" : "禁用"}",
+//         onPressed: () {
+//           PlayService.instance.playbackService.useExclusiveMode(!exclusive);
+//         },
+//         icon: Center(
+//           child: Text(
+//             exclusive ? "Excl" : "Shrd",
+//             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class _NowPlayingMoreAction extends StatelessWidget {
-  const _NowPlayingMoreAction({super.key});
+  const _NowPlayingMoreAction();
 
   @override
   Widget build(BuildContext context) {
     final playbackService = context.watch<PlaybackService>();
     final nowPlaying = playbackService.nowPlaying;
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     if (nowPlaying == null) {
       return IconButton(
@@ -164,48 +233,46 @@ class _NowPlayingMoreAction extends StatelessWidget {
     );
   }
 }
-/*
-class _DesktopLyricSwitch extends StatelessWidget {
-  const _DesktopLyricSwitch({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListenableBuilder(
-      listenable: PlayService.instance.desktopLyricService,
-      builder: (context, _) {
-        final desktopLyricService = PlayService.instance.desktopLyricService;
-        return FutureBuilder(
-          future: desktopLyricService.desktopLyric,
-          builder: (context, snapshot) => IconButton(
-            tooltip: "桌面歌词；现在：${snapshot.data == null ? "禁用" : "启用"}",
-            onPressed: () async {
-              if (snapshot.data == null) {
-                await desktopLyricService.startDesktopLyric();
-              } else {
-                desktopLyricService.killDesktopLyric();
-              }
-            },
-            icon: snapshot.connectionState == ConnectionState.done
-                ? Icon(
-                    Symbols.toast,
-                    fill: snapshot.data == null ? 0 : 1,
-                  )
-                : const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(),
-                  ),
-            color: scheme.onSecondaryContainer,
-          ),
-        );
-      },
-    );
-  }
-}*/
+// class _DesktopLyricSwitch extends StatelessWidget {
+//   const _DesktopLyricSwitch();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final scheme = Theme.of(context).colorScheme;
+//     return ListenableBuilder(
+//       listenable: PlayService.instance.desktopLyricService,
+//       builder: (context, _) {
+//         final desktopLyricService = PlayService.instance.desktopLyricService;
+//         return FutureBuilder(
+//           future: desktopLyricService.desktopLyric,
+//           builder: (context, snapshot) => IconButton(
+//             tooltip: "桌面歌词；现在：${snapshot.data == null ? "禁用" : "启用"}",
+//             onPressed: snapshot.data == null
+//                 ? desktopLyricService.startDesktopLyric
+//                 : desktopLyricService.isLocked
+//                     ? desktopLyricService.sendUnlockMessage
+//                     : desktopLyricService.killDesktopLyric,
+//             icon: snapshot.connectionState == ConnectionState.done
+//                 ? Icon(
+//                     desktopLyricService.isLocked ? Symbols.lock : Symbols.toast,
+//                     fill: snapshot.data == null ? 0 : 1,
+//                   )
+//                 : const SizedBox(
+//                     width: 20,
+//                     height: 20,
+//                     child: CircularProgressIndicator(),
+//                   ),
+//             color: scheme.onSecondaryContainer,
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
 
 class _NowPlayingVolDspSlider extends StatefulWidget {
-  const _NowPlayingVolDspSlider({super.key});
+  const _NowPlayingVolDspSlider();
 
   @override
   State<_NowPlayingVolDspSlider> createState() =>
@@ -221,9 +288,7 @@ class _NowPlayingVolDspSliderState extends State<_NowPlayingVolDspSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return MenuAnchor(
       style: MenuStyle(
@@ -284,13 +349,11 @@ class _NowPlayingVolDspSliderState extends State<_NowPlayingVolDspSlider> {
 }
 
 class _NowPlayingPlayModeSwitch extends StatelessWidget {
-  const _NowPlayingPlayModeSwitch({super.key});
+  const _NowPlayingPlayModeSwitch();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return ValueListenableBuilder(
@@ -329,13 +392,11 @@ class _NowPlayingPlayModeSwitch extends StatelessWidget {
 }
 
 class _NowPlayingShuffleSwitch extends StatelessWidget {
-  const _NowPlayingShuffleSwitch({super.key});
+  const _NowPlayingShuffleSwitch();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return ValueListenableBuilder(
@@ -355,13 +416,11 @@ class _NowPlayingShuffleSwitch extends StatelessWidget {
 
 /// previous audio, pause/resume, next audio
 class _NowPlayingMainControls extends StatelessWidget {
-  const _NowPlayingMainControls({super.key});
+  const _NowPlayingMainControls();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final playbackService = PlayService.instance.playbackService;
 
     return Row(
@@ -414,7 +473,7 @@ class _NowPlayingMainControls extends StatelessWidget {
 
 /// suiggly slider, position and length
 class _NowPlayingSlider extends StatefulWidget {
-  const _NowPlayingSlider({super.key});
+  const _NowPlayingSlider();
 
   @override
   State<_NowPlayingSlider> createState() => _NowPlayingSliderState();
@@ -426,9 +485,7 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final playbackService = context.watch<PlaybackService>();
     final nowPlayingLength = playbackService.length;
 
@@ -544,7 +601,7 @@ class _NowPlayingSliderState extends State<_NowPlayingSlider> {
 
 /// title, artist, album, cover
 class _NowPlayingInfo extends StatefulWidget {
-  const _NowPlayingInfo({super.key});
+  const _NowPlayingInfo();
 
   @override
   State<_NowPlayingInfo> createState() => __NowPlayingInfoState();
@@ -569,9 +626,7 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme
-        .of(context)
-        .colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final nowPlaying = playbackService.nowPlaying;
 
     final placeholder = FittedBox(
@@ -579,6 +634,14 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
         Symbols.broken_image,
         size: 400.0,
         color: scheme.onSecondaryContainer,
+      ),
+    );
+
+    const loadingWidget = Center(
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(),
       ),
     );
 
@@ -606,16 +669,19 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
               style: TextStyle(color: scheme.onSecondaryContainer),
             ),
             const SizedBox(height: 16),
-            RepaintBoundary(
+            Expanded(
+              child: Center(
+                child:RepaintBoundary(
               child: nowPlayingCover == null
                   ? placeholder
                   : FutureBuilder(
                 future: nowPlayingCover,
-                builder: (context, snapshot) {
-                  if (snapshot.data == null) {
-                    return placeholder;
-                  }
-                  return ClipRRect(
+                builder: (context, snapshot) =>
+                  switch (snapshot.connectionState) {
+                            ConnectionState.done => snapshot.data == null
+                    ? placeholder
+                  : FittedBox(
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
                     child: Image(
                       image: snapshot.data!,
@@ -623,8 +689,12 @@ class __NowPlayingInfoState extends State<_NowPlayingInfo> {
                       height: 400.0,
                       errorBuilder: (_, __, ___) => placeholder,
                     ),
-                  );
-                },
+                  ),
+                ),
+              _ => loadingWidget,
+                          },
+                        ),
+                ),
               ),
             )
           ],
