@@ -23,7 +23,7 @@ class LyricService extends ChangeNotifier {
         if (value == null) return;
         if (_nextLyricLine >= value.lines.length) return;
 
-        if (pos.inMilliseconds > value.lines[_nextLyricLine].start.inMilliseconds) {
+        if ((pos * 1000) > value.lines[_nextLyricLine].start.inMilliseconds) {
           _nextLyricLine += 1;
 
           final currLineIndex = _nextLyricLine - 1;
@@ -60,11 +60,11 @@ class LyricService extends ChangeNotifier {
     currLyricFuture.then((value) {
       if (value == null) return;
 
-      final next = value.lines.indexWhere((element) {
-        var position = playService.playbackService.position;
-        return element.start > position;
-      });
-
+      final next = value.lines.indexWhere(
+        (element) =>
+            element.start.inMilliseconds / 1000 >
+            playService.playbackService.position,
+      );
       _nextLyricLine = next == -1 ? value.lines.length : next;
       _lyricLineStreamController.add(max(_nextLyricLine - 1, 0));
     });

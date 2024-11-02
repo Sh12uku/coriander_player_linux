@@ -482,7 +482,7 @@ fn _get_picture_by_lofty(path: &String) -> Option<Vec<u8>> {
 /// 如果无法通过 Lofty 获取则通过 Windows 获取
 pub fn get_picture_from_path(path: String, width: u32, height: u32) -> Option<Vec<u8>> {
     let pic_option =
-        _get_picture_by_lofty(&path)
+        _get_picture_by_lofty(&path);
 
     if let Some(pic) = &pic_option {
         if let Ok(loaded_pic) = image::load_from_memory(pic) {

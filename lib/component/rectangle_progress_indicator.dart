@@ -20,7 +20,7 @@ class RectangleProgressIndicator extends StatefulWidget {
 class _RectangleProgressIndicatorState
     extends State<RectangleProgressIndicator> {
   /// [positionStream] 的订阅，在dispose取消订阅
-  late StreamSubscription<Duration> subscription;
+  late StreamSubscription<double> subscription;
 
   /// position / length, [0, 1]
   final progress = ValueNotifier<double>(0);
@@ -28,8 +28,8 @@ class _RectangleProgressIndicatorState
   @override
   void initState() {
     super.initState();
-    subscription = PlayService.instance.playbackService.positionStream.listen((event) async {
-      progress.value = event.inMilliseconds / PlayService.instance.playbackService.length.inMilliseconds;
+    subscription = PlayService.instance.playbackService.positionStream.listen((event) {
+      progress.value = event / PlayService.instance.playbackService.length;
     });
   }
 

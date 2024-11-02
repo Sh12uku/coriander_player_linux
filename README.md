@@ -18,7 +18,7 @@ Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 - [ ] 等学习Rust后尝试实现透明背景的桌面歌词（参考[waylyrics](https://github.com/waylyrics/waylyrics)）
 
-- [ ] 重新使用libbass解码
+- [x] 重新使用libbass解码
 
 ## 安装
 
@@ -26,7 +26,11 @@ Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 ## 支持播放的音乐格式
 
-由于兼容性问题更换 bass lib 为 Flutter库 audioplayers, 支持格式见[audio types](https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/media-types.html?gi-language=c#table-of-audio-types)
+~~由于兼容性问题更换 bass lib 为 Flutter库 audioplayers, 支持格式见[audio types](https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/media-types.html?gi-language=c#table-of-audio-types)~~
+
+~~我是笨比，以为ffi生成的代码也是跨平台的~~
+
+见源仓库，具体支持情况未测试。
 
 ## 支持下列音乐格式的内嵌歌词
 

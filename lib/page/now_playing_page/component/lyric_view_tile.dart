@@ -104,7 +104,7 @@ class _SyncLineContent extends StatelessWidget {
       StreamBuilder(
         stream: PlayService.instance.playbackService.positionStream,
         builder: (context, snapshot) {
-          final posInMs = snapshot.data?.inMilliseconds ?? 0;
+          final posInMs = (snapshot.data ?? 0) * 1000;
           return RichText(
             textAlign: switch (alignment) {
               LyricTextAlign.left => TextAlign.left,
@@ -401,7 +401,7 @@ class LyricTransitionTileController extends ChangeNotifier {
     factorTicker.start();
   }
 
-  void _updateProgress(Duration position) {
+  void _updateProgress(double position) {
     late int startInMs;
     late int lengthInMs;
     if (lrcLine != null) {
@@ -411,7 +411,7 @@ class LyricTransitionTileController extends ChangeNotifier {
       startInMs = syncLine!.start.inMilliseconds;
       lengthInMs = syncLine!.length.inMilliseconds;
     }
-    final sinceStart = position.inMilliseconds * 1000 - startInMs;
+    final sinceStart = position * 1000 - startInMs;
     progress = max(sinceStart, 0) / lengthInMs;
     notifyListeners();
 

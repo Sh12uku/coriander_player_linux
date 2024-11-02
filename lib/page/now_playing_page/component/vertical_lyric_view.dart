@@ -132,7 +132,7 @@ class _VerticalLyricScrollViewState extends State<_VerticalLyricScrollView> {
   void _initLyricView() {
     final next = widget.lyric.lines.indexWhere(
       (element) =>
-          element.start > playbackService.position,
+          element.start.inMilliseconds / 1000 > playbackService.position,
     );
     int nextLyricLine = next == -1 ? widget.lyric.lines.length : next;
     lyricTiles = _generateLyricTiles(max(nextLyricLine - 1, 0));

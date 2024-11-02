@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:coriander_player/app_preference.dart';
 import 'package:coriander_player/library/audio_library.dart';
 import 'package:coriander_player/play_service/play_service.dart';
-// import 'package:coriander_player/src/bass/bass_player.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:coriander_player/src/bass/bass_player.dart';
 // import 'package:coriander_player/src/rust/api/smtc_flutter.dart';
 import 'package:coriander_player/theme_provider.dart';
 import 'package:coriander_player/utils.dart';
@@ -33,12 +32,6 @@ class PlaybackService extends ChangeNotifier {
   final PlayService playService;
 
   late StreamSubscription _playerStateStreamSub;
-  late StreamSubscription<Duration> _durationStreamSub;
-  late StreamSubscription<Duration> _positionStreamSub;
-
-  Duration _duration = Duration(seconds: 1);
-  Duration _position = Duration.zero;
-
   // late StreamSubscription _smtcEventStreamSub;
 
   PlaybackService(this.playService) {
@@ -46,12 +39,6 @@ class PlaybackService extends ChangeNotifier {
       if (event == PlayerState.completed) {
         _autoNextAudio();
       }
-    });
-    _durationStreamSub = durationStream.listen((event) {
-      _duration = event;
-    });
-    _positionStreamSub = positionStream.listen((event) {
-      _position = event;
     });
 
     // _smtcEventStreamSub = _smtc.subscribeToControlEvents().listen((event) {
@@ -73,14 +60,13 @@ class PlaybackService extends ChangeNotifier {
     // });
   }
 
-  // final _player = BassPlayer();
-  final _player = AudioPlayer();
+  final _player = BassPlayer();
   // final _smtc = SmtcFlutter();
   final _pref = AppPreference.instance.playbackPref;
 
   // late final _wasapiExclusive = ValueNotifier(_player.wasapiExclusive);
   // ValueNotifier<bool> get wasapiExclusive => _wasapiExclusive;
-  //
+
   // /// 独占模式
   // void useExclusiveMode(bool exclusive) {
   //   if (_player.useExclusiveMode(exclusive)) {
@@ -107,25 +93,23 @@ class PlaybackService extends ChangeNotifier {
   late final _shuffle = ValueNotifier(false);
   ValueNotifier<bool> get shuffle => _shuffle;
 
-  Duration get length => _duration;
+  double get length => _player.length;
 
-  Duration get position => _position;
+  double get position => _player.position;
 
-  PlayerState get playerState => _player.state;
+  PlayerState get playerState => _player.playerState;
 
-  double get volumeDsp => _player.volume;
+  double get volumeDsp => _player.volumeDsp;
 
   /// 修改解码时的音量（不影响 Windows 系统音量）
   void setVolumeDsp(double volume) {
-    _player.setVolume(volume);
+    _player.setVolumeDsp(volume);
     _pref.volumeDsp = volume;
   }
 
-  Stream<Duration> get positionStream => _player.onPositionChanged.asBroadcastStream();
+  Stream<double> get positionStream => _player.positionStream;
 
-  Stream<Duration> get durationStream => _player.onDurationChanged;
-
-  Stream<PlayerState> get playerStateStream => _player.onPlayerStateChanged;
+  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
   /// 1. 更新 [_playlistIndex] 为 [audioIndex]
   /// 2. 更新 [nowPlaying] 为 playlist[_nowPlayingIndex]
@@ -138,12 +122,12 @@ class PlaybackService extends ChangeNotifier {
     try {
       _playlistIndex = audioIndex;
       nowPlaying = playlist[audioIndex];
-      _player.setSource(DeviceFileSource(nowPlaying!.path));
+      _player.setSource(nowPlaying!.path);
       setVolumeDsp(AppPreference.instance.playbackPref.volumeDsp);
 
       playService.lyricService.updateLyric();
 
-      _player.resume();
+      _player.start();
       notifyListeners();
       ThemeProvider.instance.applyThemeFromAudio(nowPlaying!);
 
@@ -157,10 +141,10 @@ class PlaybackService extends ChangeNotifier {
 
       // playService.desktopLyricService.canSendMessage.then((canSend) {
       //   if (!canSend) return;
-
-        // playService.desktopLyricService
-        //     .sendPlayerStateMessage(playerState == PlayerState.playing);
-        // playService.desktopLyricService.sendNowPlayingMessage(nowPlaying!);
+      //
+      //   playService.desktopLyricService
+      //       .sendPlayerStateMessage(playerState == PlayerState.playing);
+      //   playService.desktopLyricService.sendNowPlayingMessage(nowPlaying!);
       // });
     } catch (err) {
       LOGGER.e("[load and play] $err");
@@ -297,7 +281,7 @@ class PlaybackService extends ChangeNotifier {
   /// 恢复播放
   void start() {
     try {
-      _player.resume();
+      _player.start();
       // _smtc.updateState(state: SMTCState.playing);
       // playService.desktopLyricService.canSendMessage.then((canSend) {
       //   if (!canSend) return;
@@ -315,15 +299,14 @@ class PlaybackService extends ChangeNotifier {
   void playAgain() => _nextAudio_singleLoop();
 
   void seek(double position) {
-    _player.seek(Duration(milliseconds: (position * 1000).toInt()));
+    _player.seek(position);
     playService.lyricService.findCurrLyricLine();
   }
 
   void close() {
     _playerStateStreamSub.cancel();
     // _smtcEventStreamSub.cancel();
-    // _player.free();
-    _player.dispose();
+    _player.free();
     // _smtc.close();
   }
 }
