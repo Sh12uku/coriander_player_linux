@@ -2,8 +2,6 @@
 
 ![音乐页](软件截图/音乐页.png)
 
-## [更多软件截图在下面（点我滚动到下面）](#软件截图)
-
 正在学习开发Flutter应用，不保证所有bug都能修复（逃
 
 ~~该播放器拥有桌面歌词组件。这个桌面歌词组件也可以给别的音乐播放器使用。请见 [desktop_lyric](https://github.com/Ferry-200/desktop_lyric.git)~~  
@@ -12,33 +10,23 @@ Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 
 ## 已知问题  
 
-* Linux端设置页面中选择字体，字体列表为空（`system_fonts`库只会扫描`/usr/share/fonts/`和`$HOME/.local/share/fonts/`中的字体而没有扫描子目录）  
+* Linux端设置页面中选择字体，字体列表为空（`system_fonts`库只会扫描`/usr/share/fonts/`和`$HOME/.local/share/fonts/`中的字体而没有扫描子目录）
+
+## TODO  
+
+- [ ] 添加mpris支持  
+
+- [ ] 等学习Rust后尝试实现透明背景的桌面歌词（参考[waylyrics](https://github.com/waylyrics/waylyrics)）
+
+- [ ] 重新使用libbass解码
 
 ## 安装
 
-1. 下载 [Release](https://github.com/Ferry-200/coriander_player/releases/latest) 里文件安装
-2. **（已过时，现在的体验版已经落后于正式版）** 你也可以到 [Action 构建版本（体验版）介绍](https://github.com/Ferry-200/coriander_player/issues/49) 下载体验版 :)
+下载 [Release](https://github.com/Sh12uku/coriander_player_linux/releases/latest) 里文件安装
 
 ## 支持播放的音乐格式
 
-- mp3, mp2, mp1
-- ogg
-- wav, wave
-- aif, aiff, aifc
-- asf, wma
-- aac, adts
-- m4a
-- ac3
-- amr, 3ga
-- flac
-- mpc
-- mid
-- wv, wvc
-- opus
-- dsf, dff
-- ape
-
-*由于兼容性问题更换 bass lib 为 Flutter库 audioplayers, 支持格式见[audio types](https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/media-types.html?gi-language=c#table-of-audio-types)*
+由于兼容性问题更换 bass lib 为 Flutter库 audioplayers, 支持格式见[audio types](https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/media-types.html?gi-language=c#table-of-audio-types)
 
 ## 支持下列音乐格式的内嵌歌词
 
@@ -105,19 +93,3 @@ Linux端暂无法实现透明背景的桌面歌词，故移除该功能
 - [Lofty](https://crates.io/crates/lofty)：歌曲标签获取
 - [BASS](https://www.un4seen.com/bass.html)：播放乐曲
 - [flutter_rust_bridge](https://pub.dev/packages/flutter_rust_bridge)
-
-## 软件截图
-
-![音乐页](软件截图/音乐页.png)
-![艺术家页](软件截图/艺术家页.png)
-![艺术家详情页](软件截图/艺术家详情页.png)
-![专辑详情页](软件截图/专辑详情页.png)
-![主题选择器](软件截图/主题选择器.png)
-![夜间模式](软件截图/夜间模式.png)
-![正在播放：LRC歌词](软件截图/正在播放（LRC歌词）.png)
-![正在播放：逐字歌词](软件截图/正在播放（逐字歌词）.png)
-![正在播放：间奏动画](软件截图/正在播放（间奏动画）.png)
-![正在播放：居中对齐](软件截图/正在播放（居中对齐）.png)
-![桌面歌词](软件截图/桌面歌词.png)
-![桌面歌词：操作栏](软件截图/桌面歌词（操作栏）.png)
-![桌面歌词：夜间模式](软件截图/桌面歌词（夜间模式）.png)
